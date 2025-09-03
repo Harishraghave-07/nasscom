@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+*.log
+
+# VS Code
+.vscode/
+.history/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Docker
+*.tar
+docker-compose.override.yml
+
+# Data files
+data/raw/*
+data/processed/*
+logs/
+models/
+*.csv
+*.tsv
+*.xlsx
+*.h5
+*.pth
+*.ckpt
+
+# Env
+.env
+.env.*
+.venv/
