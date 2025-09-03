@@ -26,12 +26,17 @@ COPY requirements.txt /app/
 RUN pip install --no-cache-dir --upgrade pip
 
 # Install Python dependencies with reproducibility
-RUN pip install --no-cache-dir --force-reinstall --no-deps -r requirements.txt
+RUN pip install --no-cache-dir --force-reinstall -r requirements.txt
 
 # =============================
 # STAGE 2: Runtime
 # =============================
 FROM python:3.11-slim-bullseye AS runtime
+
+# Install curl for health checks
+RUN apt-get update && apt-get install -y --no-install-recommends \
+	curl \
+	&& rm -rf /var/lib/apt/lists/*
 
 # Copy installed Python packages from builder stage
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
