@@ -1,0 +1,11 @@
+gradio
+numpy
+pandas
+# Add any other packages your app needs
+gradio_client
+httpx
+idna
+certifi
+charset_normalizer
+sniffio
+rfc3986

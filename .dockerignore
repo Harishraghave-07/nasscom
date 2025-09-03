@@ -1,0 +1,63 @@
+# =============================
+# .dockerignore for Healthcare Python Projects
+# =============================
+
+# Ignore Python cache and build artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+
+# Ignore test files and directories
+tests/
+**/tests/
+test_*.py
+*_test.py
+
+# Ignore documentation and notebooks
+docs/
+notebooks/
+*.ipynb
+*.md
+*.rst
+
+# Ignore local environment files
+.env
+.env*
+.venv/
+venv/
+
+# Ignore git files and cache directories
+.git/
+.gitignore
+.mypy_cache/
+.pytest_cache/
+.cache/
+
+# Ignore raw data and log files
+data/raw/*
+logs/*
+*.log
+
+# Ignore IDE/editor configurations
+.vscode/
+.idea/
+*.swp
+*.bak
+*.tmp
+
+# Ignore OS-specific files
+*.DS_Store
+Thumbs.db
+
+# Ignore shell/batch scripts and executables
+*.sh
+*.bat
+*.exe
+
+# Ignore Makefile and Dockerfile themselves
+Makefile
+Dockerfile
