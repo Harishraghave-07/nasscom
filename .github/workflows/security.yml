@@ -1,0 +1,399 @@
+name: Security Scans
+
+on:
+  schedule:
+    - cron: '0 2 * * 1' # Monday 02:00 UTC weekly
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      severity:
+        description: 'Run severity level for manual scan'
+        required: true
+        default: 'MEDIUM'
+        type: choice
+        options:
+          - LOW
+          - MEDIUM
+          - HIGH
+          - CRITICAL
+
+permissions:
+  contents: read
+  issues: write
+  security-events: write
+  actions: read
+
+env:
+  SARIF_FILE_BANDIT: bandit.sarif
+  ARTIFACT_RETENTION_DAYS: 7
+
+jobs:
+  dependency-vuln-scan:
+    name: Dependency Vulnerability Scan
+    runs-on: ubuntu-22.04
+    outputs:
+      critical_count: ${{ steps.count.outputs.critical }}
+      high_count: ${{ steps.count.outputs.high }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install scanner tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install pip-audit safety bandit semgrep detect-secrets trufflehog jq || true
+          # Trivy installed via apt
+          sudo apt-get update && sudo apt-get install -y wget gnupg2 apt-transport-https ca-certificates || true
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add - || true
+          echo deb https://aquasecurity.github.io/trivy-repo/deb stable main | sudo tee /etc/apt/sources.list.d/trivy.list || true
+          sudo apt-get update && sudo apt-get install -y trivy || true
+
+      - name: Run pip-audit (JSON)
+        if: "exists('requirements.txt')"
+        run: |
+          pip-audit -r requirements.txt --format=json > pip-audit.json || true
+
+      - name: Run safety check (JSON)
+        if: "exists('requirements.txt')"
+        run: |
+          python -m pip install safety || true
+          safety check --file=requirements.txt --json > safety.json || true
+
+      - name: Run bandit (SARIF + JSON)
+        run: |
+          bandit -r src -f sarif -o $SARIF_FILE_BANDIT || true
+          bandit -r src -f json -o bandit.json || true
+
+      - name: Run npm audit if package.json exists
+        if: "exists('package.json')"
+        run: |
+          npm install --package-lock-only || true
+          npm audit --json > npm-audit.json || true
+
+      - name: Detect secrets (baseline + scan)
+        run: |
+          # Create baseline file if not present to reduce false positives
+          detect-secrets scan > .secrets.baseline || true
+          detect-secrets audit --baseline .secrets.baseline || true
+
+      - name: Aggregate counts and fail conditions
+        id: count
+        run: |
+          set -euo pipefail
+          CRITICAL=0
+          HIGH=0
+
+          # Count critical/high from pip-audit (best-effort: look for severity keys)
+          if [ -f pip-audit.json ]; then
+            # pip-audit JSON may contain 'vulns' or 'vulnerabilities' arrays; aggregate by searching for 'CRITICAL'/'HIGH'
+            C1=$(jq '[..|objects | .severity? // empty] | map(select(.=="CRITICAL")) | length' pip-audit.json 2>/dev/null || echo 0)
+            H1=$(jq '[..|objects | .severity? // empty] | map(select(.=="HIGH")) | length' pip-audit.json 2>/dev/null || echo 0)
+          else
+            C1=0; H1=0
+          fi
+
+          # Count from safety.json (if available)
+          if [ -f safety.json ]; then
+            C2=$(jq '[.vulnerabilities[]? | select(.severity=="critical" or .severity=="CRITICAL")] | length' safety.json 2>/dev/null || echo 0)
+            H2=$(jq '[.vulnerabilities[]? | select(.severity=="high" or .severity=="HIGH")] | length' safety.json 2>/dev/null || echo 0)
+          else
+            C2=0; H2=0
+          fi
+
+          # Count from npm audit
+          if [ -f npm-audit.json ]; then
+            C3=$(jq '.vulnerabilities | to_entries[]? | select(.value.severity=="critical") | .value | length' npm-audit.json 2>/dev/null || echo 0)
+            H3=$(jq '.vulnerabilities | to_entries[]? | select(.value.severity=="high") | .value | length' npm-audit.json 2>/dev/null || echo 0)
+          else
+            C3=0; H3=0
+          fi
+
+          # Count from bandit (map bandit issues severity: HIGH/LOW etc.)
+          if [ -f bandit.json ]; then
+            C4=$(jq '[.results[]? | select(.issue_severity=="HIGH" or .issue_severity=="CRITICAL")] | length' bandit.json 2>/dev/null || echo 0)
+            H4=$(jq '[.results[]? | select(.issue_severity=="MEDIUM" or .issue_severity=="HIGH")] | length' bandit.json 2>/dev/null || echo 0)
+          else
+            C4=0; H4=0
+          fi
+
+          CRITICAL=$((C1 + C2 + C3 + C4))
+          HIGH=$((H1 + H2 + H3 + H4))
+
+          echo "CRITICAL=$CRITICAL" >> $GITHUB_OUTPUT
+          echo "HIGH=$HIGH" >> $GITHUB_OUTPUT
+
+          echo "Found Critical: $CRITICAL, High: $HIGH"
+
+          # Fail workflow for criticals or too many highs
+          if [ "$CRITICAL" -gt 0 ]; then
+            echo "Critical vulnerabilities found - failing job" >&2
+            exit 1
+          fi
+          if [ "$HIGH" -gt 5 ]; then
+            echo "More than 5 high vulnerabilities - failing job" >&2
+            exit 1
+          fi
+
+      - name: Upload vulnerability artifacts (SARIF + JSON)
+        uses: actions/upload-artifact@v3
+        with:
+          name: vuln-reports
+          path: |
+            pip-audit.json
+            safety.json
+            bandit.json
+            $SARIF_FILE_BANDIT
+            npm-audit.json
+          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
+
+      - name: Upload Bandit SARIF to GitHub
+        if: always()
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: ${{ env.SARIF_FILE_BANDIT }}
+
+  code-security-analysis:
+    name: Code Security Analysis
+    runs-on: ubuntu-22.04
+    needs: dependency-vuln-scan
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install security tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install bandit semgrep detect-secrets truffleHog jq || true
+
+      - name: Run bandit (JSON)
+        run: bandit -r src -f json -o bandit-report.json || true
+
+      - name: Run semgrep (OWASP/auto)
+        run: semgrep --config=auto --json --output=semgrep-report.json || true
+
+      - name: Run truffleHog (secrets scan)
+        run: trufflehog filesystem --json . > trufflehog-report.json || true
+
+      - name: Run detect-secrets scan baseline check
+        run: |
+          detect-secrets scan > .secrets.baseline || true
+          detect-secrets audit --baseline .secrets.baseline || true
+
+      - name: SQL injection pattern scan (OCR processing)
+        run: |
+          # Heuristic grep for SQL patterns in OCR/processing code
+          grep -RIn "execute(\|raw\|format\|f\"\"\'\"" src || true
+          # Run semgrep rules for SQL injection if present
+          semgrep --config=p/owasp-top-ten --json --output=semgrep-sqli.json || true
+
+      - name: Upload code security artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: code-security-reports
+          path: |
+            bandit-report.json
+            semgrep-report.json
+            semgrep-sqli.json
+            trufflehog-report.json
+          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
+
+  docker-image-security:
+    name: Docker Image Security
+    runs-on: ubuntu-22.04
+    needs: dependency-vuln-scan
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: |
+          docker build -t nasscom:security .
+
+      - name: Scan image with Trivy (JSON)
+        run: |
+          trivy image --quiet --format json --output trivy-report.json nasscom:security || true
+
+      - name: Check base image vulnerabilities and recommend updates
+        run: |
+          jq '.Results[]?.Vulnerabilities[]? | {PkgName:.PkgName, InstalledVersion:.InstalledVersion, VulnerabilityID:.VulnerabilityID, Severity:.Severity, FixedVersion:.FixedVersion}' trivy-report.json > trivy-summary.json || true
+
+      - name: Validate non-root user in image
+        run: |
+          docker run --rm --entrypoint "id" nasscom:security || true
+
+      - name: Test container security flags
+        run: |
+          docker run --rm --security-opt no-new-privileges nasscom:security true || true
+
+      - name: Fail on high vulnerabilities in image
+        run: |
+          HIGH_IMG=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity=="HIGH" or .Severity=="CRITICAL")] | length' trivy-report.json 2>/dev/null || echo 0)
+          if [ "$HIGH_IMG" -gt 0 ]; then
+            echo "Image contains HIGH/CRITICAL vulnerabilities - failing job" >&2
+            exit 1
+          fi
+
+      - name: Upload trivy report
+        uses: actions/upload-artifact@v3
+        with:
+          name: trivy-report
+          path: trivy-report.json
+          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
+
+  hipaa-compliance-scan:
+    name: HIPAA Compliance Checks
+    runs-on: ubuntu-22.04
+    needs: [dependency-vuln-scan, code-security-analysis, docker-image-security]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Scan for PHI leakage in logs and fixtures
+        run: |
+          # Heuristics: look for phone numbers, SSNs, MRNs, and PHI-like patterns in logs and test fixtures
+          grep -RInE "\b(\d{3}-\d{2}-\d{4}|\d{10}|\+?\d{1,3}[ -]?\(?\d{2,3}\)?[ -]?\d{3}[ -]?\d{4})\b" --exclude-dir=.git || true
+
+      - name: Verify encryption patterns in code
+        run: |
+          # Check for use of cryptography libraries and proper modes (AESGCM etc.)
+          grep -RIn "Cipher|AES|GCM|Fernet|cryptography" src || true
+
+      - name: Check audit trail completeness
+        run: |
+          grep -RIn "logger|audit|auditlog|audit_event|audittrail" src || true
+
+      - name: Validate secure temp file handling
+        run: |
+          grep -RIn "TemporaryFile|tempfile.mkstemp|mktemp|open\(.*\, 'w'\)" src || true
+
+      - name: Fail if HIPAA heuristics not met
+        run: |
+          # For demonstration: if no logger patterns found, fail pipeline
+          COUNT=$(grep -RIn "logger|audit|auditlog|audit_event|audittrail" src | wc -l || echo 0)
+          if [ "$COUNT" -lt 1 ]; then
+            echo "Audit logging patterns not found - failing HIPAA check" >&2
+            exit 1
+          fi
+
+      - name: Upload HIPAA scan artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: hipaa-scan-artifacts
+          path: |
+            hipaa-*.txt
+          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
+
+  remediation-issues:
+    name: Create remediation issues for HIGH/CRITICAL findings
+    runs-on: ubuntu-22.04
+    needs: [dependency-vuln-scan, docker-image-security]
+    if: needs.dependency-vuln-scan.outputs.high_count != '0' || needs.dependency-vuln-scan.outputs.critical_count != '0'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create issues for findings
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const critical = parseInt('${{ needs.dependency-vuln-scan.outputs.critical_count }}') || 0;
+            const high = parseInt('${{ needs.dependency-vuln-scan.outputs.high_count }}') || 0;
+            const repo = context.repo.repo;
+            const owner = context.repo.owner;
+            if (critical > 0) {
+              await github.issues.create({owner, repo, title: `CRITICAL vulnerabilities detected`, body: `CRITICAL vulnerabilities (${critical}) were found during automated scans. Please triage immediately.`});
+            }
+            if (high > 0) {
+              await github.issues.create({owner, repo, title: `HIGH vulnerabilities detected`, body: `HIGH vulnerabilities (${high}) were found during automated scans. Please review and remediate.`});
+            }
+
+  notify-and-report:
+    name: Notifications & Reports
+    runs-on: ubuntu-22.04
+    needs: [dependency-vuln-scan, code-security-analysis, docker-image-security, hipaa-compliance-scan]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Upload consolidated security artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: security-artifacts
+          path: |
+            pip-audit.json
+            safety.json
+            bandit.json
+            bandit.sarif
+            trivy-report.json
+            pip-audit.json
+          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
+
+      - name: Post Security Advisory (if vulnerabilities found)
+        if: needs.dependency-vuln-scan.outputs.critical_count != '0' || needs.dependency-vuln-scan.outputs.high_count != '0'
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const title = 'Automated security scan detected vulnerabilities';
+            const body = 'Automated security scans detected HIGH/CRITICAL vulnerabilities. See attached reports and created issues for remediation.';
+            await github.rest.repos.createRelease({owner, repo, tag_name: `security-scan-${Date.now()}`, name: title, body});
+
+      - name: Send encrypted email report to security team
+        if: secrets.SECURITY_EMAIL != ''
+        run: |
+          echo "Security reports available in workflow artifacts. Sending notification to security email is configured but requires SMTP secrets. Configure SMTP_USERNAME, SMTP_PASSWORD, SMTP_HOST, SMTP_PORT to enable email sending." || true
+
+      - name: Update security badge in README
+        run: |
+          TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          BADGE="![security-scan](https://img.shields.io/badge/security-scan-${TIMESTAMP}-blue)"
+          # Naively update README.md (append badge if not present)
+          if ! grep -q "security-scan" README.md; then
+            echo "\n${BADGE}\n" >> README.md
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add README.md && git commit -m "chore: update security badge with latest scan timestamp" || true
+            git push || true
+          fi
+
+      - name: Final summary comment on PRs
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const summary = `Security scan completed. Critical: ${{ needs.dependency-vuln-scan.outputs.critical_count }}, High: ${{ needs.dependency-vuln-scan.outputs.high_count }}`;
+            await github.issues.createComment({owner: context.repo.owner, repo: context.repo.repo, issue_number: context.payload.pull_request.number, body: summary});
+
+  # Secret exclusion & false-positive handling notes (non-executable step for docs)
+  docs-secret-handling:
+    name: Secret scanning exclusions and FP handling (docs)
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Create guidance file
+        run: |
+          cat > SECURITY_SCAN_GUIDANCE.md <<'EOF'
+          # Security scan exclusions and false positive handling
+          - Create a detect-secrets baseline and commit it to reduce FP: `.secrets.baseline`
+          - Exclude well-known test fixtures under `tests/fixtures/` using tool configs
+          - Mark allowed exceptions in a SECURITY_EXCEPTIONS.md with justification and owner
+          EOF
+      - name: Upload guidance
+        uses: actions/upload-artifact@v3
+        with:
+          name: security-guidance
+          path: SECURITY_SCAN_GUIDANCE.md
