@@ -1,6 +1,11 @@
 gradio
-numpy
+# Core runtime
+numpy>=1.24,<2
 pandas
+# Image-processing dependencies
+opencv-python-headless>=4.7.0.72
+scikit-image>=0.19.3
+pydicom>=2.4.2
 # Add any other packages your app needs
 gradio_client
 httpx
