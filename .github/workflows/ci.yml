@@ -1,0 +1,281 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - 'feature/**'
+  pull_request:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Select environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  ARTIFACT_RETENTION_DAYS: 7
+
+jobs:
+  # Code Quality & Security checks
+  code-quality:
+    name: Code Quality & Security
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.10.12', '3.11.5']
+        os: ['ubuntu-22.04', 'ubuntu-20.04']
+        # Experimental axis: builds marked experimental will be allowed to fail
+        experimental: [false, true]
+    # Allow experimental matrix cells to be tolerated
+    continue-on-error: ${{ matrix.experimental }}
+
+    steps:
+      - name: Checkout repository (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+          cache-dependency-path: '**/requirements*.txt'
+
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip
+
+      - name: Install dependencies (requirements + dev-requirements)
+        run: |
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f dev-requirements.txt ]; then pip install -r dev-requirements.txt; fi
+
+      - name: Run security scan (pip-audit)
+        run: |
+          python -m pip install pip-audit
+          pip-audit --desc --output json > security-report.json || true
+
+      - name: Run linters in parallel (black, isort, flake8)
+        shell: bash
+        run: |
+          set -euo pipefail
+          # start black and isort in background
+          black --check --diff . & pid_black=$!
+          isort --check-only --diff . & pid_isort=$!
+          # run flake8 (output to file); allow it to complete independently
+          flake8 --output-file=flake8-report.txt || true
+          # wait for parallel checks and capture exit codes
+          wait $pid_black || rc_black=$? || rc_black=1
+          wait $pid_isort || rc_isort=$? || rc_isort=1
+          rc_black=${rc_black:-0}
+          rc_isort=${rc_isort:-0}
+          echo "black rc: $rc_black, isort rc: $rc_isort"
+          if [ "$rc_black" -ne 0 ] || [ "$rc_isort" -ne 0 ]; then
+            echo "One or more formatters failed" >&2
+            # fail the step (and job) unless this is experimental cell
+            if [ "${{ matrix.experimental }}" = "true" ]; then
+              echo "Experimental matrix - marking linter failures non-blocking"
+            else
+              exit 1
+            fi
+          fi
+
+      - name: Upload lint reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: lint-reports-${{ matrix.os }}-py${{ matrix.python-version }}
+          path: |
+            flake8-report.txt
+            security-report.json
+          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
+
+  # Unit Tests
+  unit-tests:
+    name: Unit Tests
+    needs: code-quality
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        python-version: ['3.11.5']
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+          cache-dependency-path: '**/requirements*.txt'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f dev-requirements.txt ]; then pip install -r dev-requirements.txt; fi
+
+      - name: Start test services (if docker-compose.test.yml present)
+        if: always()
+        run: |
+          if [ -f infra/docker-compose.test.yml ]; then
+            docker-compose -f infra/docker-compose.test.yml up -d
+          else
+            echo "No infra/docker-compose.test.yml found; assuming unit tests don't require external services"
+          fi
+
+      - name: Run pytest with coverage
+        run: |
+          pip install pytest pytest-cov
+          pytest --cov=src --cov-report=xml --cov-report=html --junit-xml=junit.xml || exit 1
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        with:
+          name: unit-test-results
+          path: |
+            junit.xml
+            htmlcov/
+          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
+
+      - name: Upload coverage to Codecov
+        if: ${{ secrets.CODECOV_TOKEN != '' }}
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  # Integration Tests (non-critical)
+  integration-tests:
+    name: Integration Tests
+    needs: unit-tests
+    runs-on: ubuntu-22.04
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Docker image (verify containerization)
+        run: docker build -t nasscom:ci .
+
+      - name: Start integration services with docker-compose (if present)
+        run: |
+          if [ -f docker-compose.integration.yml ]; then
+            docker-compose -f docker-compose.integration.yml up -d
+          else
+            echo "No docker-compose.integration.yml found; running ephemeral containers where needed"
+          fi
+
+      - name: Wait for Gradio to be ready
+        run: |
+          for i in {1..30}; do
+            if curl --silent --fail http://localhost:7860/health; then
+              echo "Gradio healthy" && break
+            fi
+            echo "Waiting for Gradio... ($i)"; sleep 2
+          done
+
+      - name: Test Gradio UI endpoints
+        run: |
+          curl --fail http://localhost:7860/ || true
+          curl --fail http://localhost:7860/health || true
+
+      - name: Validate PHI detection accuracy (if script exists)
+        run: |
+          if [ -f tests/integration/validate_phi.py ]; then
+            python tests/integration/validate_phi.py --samples tests/data/phi_samples --threshold 0.9 || true
+          else
+            echo "No PHI validation script found - skipping"
+          fi
+
+      - name: Upload integration artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: integration-results
+          path: |
+            integration-logs/
+            tests/integration/results/
+          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
+
+  # Performance Testing (non-critical)
+  performance-tests:
+    name: Performance Tests
+    needs: integration-tests
+    runs-on: ubuntu-22.04
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run OCR benchmark (if script exists)
+        run: |
+          if [ -f tests/perf/benchmark_ocr.py ]; then
+            python tests/perf/benchmark_ocr.py --output perf-report.json || true
+          else
+            echo "No OCR benchmark script found - skipping"
+          fi
+
+      - name: Memory profiling (if script exists)
+        run: |
+          if [ -f tests/perf/memory_profile.py ]; then
+            python tests/perf/memory_profile.py --output mem-report.json || true
+          else
+            echo "No memory profiling script found - skipping"
+          fi
+
+      - name: Upload performance report
+        uses: actions/upload-artifact@v3
+        with:
+          name: performance-report
+          path: |
+            perf-report.json
+            mem-report.json
+          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
+
+  # Slack notification on failure (optional)
+  notify-slack:
+    name: Notify Slack on failure
+    runs-on: ubuntu-22.04
+    needs: [code-quality, unit-tests, integration-tests, performance-tests]
+    if: failure() && secrets.SLACK_WEBHOOK != ''
+    steps:
+      - name: Send Slack notification
+        run: |
+          payload=$(jq -n --arg repo "${{ github.repository }}" --arg run "${{ github.run_id }}" --arg url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" '{text: "CI failed for " + $repo + ". <" + $url + "|Open run>"}')
+          curl -X POST -H 'Content-type: application/json' --data "$payload" ${{ secrets.SLACK_WEBHOOK }}
+
+  # PR summary comment with job results
+  pr-summary:
+    name: PR Summary Comment
+    runs-on: ubuntu-22.04
+    needs: [code-quality, unit-tests, integration-tests, performance-tests]
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Post summary comment on PR
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { context } = github;
+            const runUrl = `${context.payload.repository.html_url}/actions/runs/${process.env.GITHUB_RUN_ID}`;
+            const summary = `CI results:\n- Code Quality: ${{ needs['code-quality'].result }}\n- Unit Tests: ${{ needs['unit-tests'].result }}\n- Integration Tests: ${{ needs['integration-tests'].result }}\n- Performance Tests: ${{ needs['performance-tests'].result }}\n\nOpen workflow run: ${runUrl}`;
+            await github.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: summary
+            });

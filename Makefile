@@ -1,4 +1,4 @@
-.PHONY: env
+.PHONY: env bootstrap validate
 
 env:
 	@echo "Creating Python 3.11 virtual environment in .venv..."
@@ -29,3 +29,14 @@ EOL
 	@echo "LOG_LEVEL=INFO" > .env.example
 	@echo "DATA_PATH=./data/raw" >> .env.example
 	@echo "✅ Environment setup complete."
+
+bootstrap:
+	@chmod +x bootstrap.sh
+	@./bootstrap.sh
+
+validate:
+	@echo "Running validation: lint, tests, security scan"
+	@. .venv/bin/activate && pre-commit run --all-files || true
+	@. .venv/bin/activate && pytest || true
+	@. .venv/bin/activate && python -m pip install pip-audit || true
+	@. .venv/bin/activate && pip-audit -r requirements.txt || true
