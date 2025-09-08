@@ -223,6 +223,24 @@ class TextDetector:
 
         regions: List[Dict[str, Any]] = []
         for box, score in zip(detection_results[0], detection_results[1]):
+            # EasyOCR may return score as a float or a list/array of floats
+            try:
+                if isinstance(score, (list, tuple)):
+                    # take the max confidence if multiple are provided
+                    s = float(max(score)) if len(score) > 0 else 0.0
+                else:
+                    # numpy types may require conversion
+                    s = float(score)
+            except Exception:
+                try:
+                    import numpy as _np
+
+                    if isinstance(score, _np.ndarray):
+                        s = float(score.max())
+                    else:
+                        s = float(score)
+                except Exception:
+                    s = 0.0
             # box is 4 points; convert to bbox
             xs = [int(p[0]) for p in box]
             ys = [int(p[1]) for p in box]
@@ -232,11 +250,11 @@ class TextDetector:
             area = (x2 - x1) * (y2 - y1)
             if area < self.min_text_area:
                 continue
-            if score < self.confidence_threshold:
+            if s < self.confidence_threshold:
                 # still record low-confidence for audit but skip output
-                regions.append({"bbox": bbox, "confidence": float(score), "low_confidence": True, "box_points": box})
+                regions.append({"bbox": bbox, "confidence": float(s), "low_confidence": True, "box_points": box})
             else:
-                regions.append({"bbox": bbox, "confidence": float(score), "low_confidence": False, "box_points": box})
+                regions.append({"bbox": bbox, "confidence": float(s), "low_confidence": False, "box_points": box})
 
         # Merge overlapping detections
         merged = self.merge_overlapping_regions([r for r in regions if not r.get("low_confidence")])

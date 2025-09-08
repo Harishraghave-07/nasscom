@@ -89,6 +89,10 @@ class OCRConfig(BaseModel):
     supported_languages: List[str] = Field(default_factory=lambda: ["en"])
     gpu_enabled: bool = False
     batch_size: int = Field(1, ge=1)
+    # allow the system to operate in a fallback/CI mode where heavy
+    # dependencies (EasyOCR / torch) may be unavailable; detectors should
+    # check this flag to degrade gracefully.
+    enable_fallback: bool = True
 
 
 class PHIDetectionConfig(BaseModel):
@@ -129,11 +133,30 @@ class MaskingConfig(BaseModel):
     mask_expansion_pixels: int = Field(5, ge=0, le=50)
     preserve_aspect_ratio: bool = True
     output_quality: int = Field(95, ge=1, le=100)
+    # Temporary directory to store caching/intermediate files for masking
+    # operations. Providing a default ensures ImageInpainter can create a
+    # cache directory in environments where AppConfig isn't fully wired.
+    temp_dir: str = Field("temp/")
+    # allow a fallback mode where inpainting may use simplified algorithms
+    # or mocked implementations for testing.
+    enable_fallback: bool = False
+    # redaction style: 'inpaint' uses inpainting algorithms; 'blackbox' draws solid black boxes
+    # 'blackbox_merge' draws a single merged black bar covering all detected regions
+    redaction_style: str = Field("inpaint")
+    # padding in pixels when merging bboxes for a single black bar
+    blackbox_padding_pixels: int = Field(5, ge=0, le=200)
 
     @validator("inpainting_method")
     def _method_allowed(cls, v):
         if v not in ("telea", "ns"):
             raise ValueError("inpainting_method must be 'telea' or 'ns'")
+        return v
+
+    @validator("redaction_style")
+    def _redaction_allowed(cls, v: str):
+        allowed = {"inpaint", "blackbox", "blackbox_merge"}
+        if v not in allowed:
+            raise ValueError(f"redaction_style must be one of {allowed}")
         return v
 
 

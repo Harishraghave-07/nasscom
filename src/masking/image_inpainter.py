@@ -61,8 +61,30 @@ class ImageInpainter:
     def __init__(self, config: MaskingConfig):
         self.config = config
         self.audit_logger = logging.getLogger("cim.audit.masking")
-        self._cache_dir = Path(self.config.temp_dir) / "inpaint_cache"
-        self._cache_dir.mkdir(parents=True, exist_ok=True)
+        # determine a safe temporary/cache directory. MaskingConfig may not
+        # include a temp_dir; fall back to application SETTINGS.processing.temp_dir
+        # or the system temp directory.
+        try:
+            temp_dir = getattr(self.config, "temp_dir", None)
+        except Exception:
+            temp_dir = None
+        if not temp_dir:
+            try:
+                from src.core.config import SETTINGS
+
+                temp_dir = getattr(SETTINGS.processing, "temp_dir", None)
+            except Exception:
+                temp_dir = None
+        if not temp_dir:
+            import tempfile
+
+            temp_dir = tempfile.gettempdir()
+
+        self._cache_dir = Path(temp_dir) / "inpaint_cache"
+        try:
+            self._cache_dir.mkdir(parents=True, exist_ok=True)
+        except Exception:
+            logger.exception("Failed to create cache dir %s", self._cache_dir)
         self._perf = {"images": 0, "total_time_s": 0.0}
         # verify OpenCV availability
         if cv2 is None:

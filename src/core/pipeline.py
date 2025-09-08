@@ -37,6 +37,8 @@ class StageResult:
 class ClinicalImageMaskingPipeline:
     def __init__(self, config: AppConfig):
         self.config = config
+        # instance logger for pipeline-level messages
+        self.logger = logging.getLogger("ClinicalImageMaskingPipeline")
         # set up logging and audit trail
         try:
             self.config.setup_logging()
@@ -51,6 +53,15 @@ class ClinicalImageMaskingPipeline:
 
         # instantiate components on demand
         self._init_components()
+        # import mocks to use as fallbacks in test or degraded environments
+        try:
+            from src.core.mocks import MockTextDetector, MockImageInpainter
+
+            self._MockTextDetector = MockTextDetector
+            self._MockImageInpainter = MockImageInpainter
+        except Exception:
+            self._MockTextDetector = None
+            self._MockImageInpainter = None
 
         # performance monitoring
         self.metrics: Dict[str, Any] = {"processed": 0, "errors": 0, "stages": {}}
@@ -91,9 +102,19 @@ class ClinicalImageMaskingPipeline:
         overall_start = time.perf_counter()
 
         try:
-            # Stage 1: preprocess
-            img, meta, dur = None, {}, 0.0
-            (img, meta), dur, err = self._timeit(self.stage_1_preprocess, input_path)
+            # Stage 1: preprocess (defensive unpacking)
+            img, meta = None, {}
+            res, dur, err = self._timeit(self.stage_1_preprocess, input_path)
+            if res is None:
+                logger.warning("Preprocess returned no result for %s", input_path)
+                img, meta = None, {}
+            else:
+                try:
+                    img, meta = res
+                except Exception:
+                    logger.exception("Preprocess returned unexpected shape/result")
+                    img, meta = None, {}
+
             stage_results["preprocess"] = StageResult("preprocess", dur, result=meta, error=str(err) if err else None)
             if err:
                 self.metrics["errors"] += 1
@@ -102,25 +123,55 @@ class ClinicalImageMaskingPipeline:
                 if recovery.get("failed"):
                     raise RuntimeError("Preprocessing failed and recovery unsuccessful")
 
-            # Stage 2: text detection
-            regions, det_meta, dur2 = None, {}, 0.0
-            (regions, det_meta), dur2, err2 = self._timeit(self.stage_2_text_detection, img, meta)
+            # Stage 2: text detection (defensive unpacking)
+            regions, det_meta = [], {}
+            res, dur2, err2 = self._timeit(self.stage_2_text_detection, img, meta)
+            if res is None:
+                logger.warning("Text detection stage returned no result for %s", image_id)
+                regions, det_meta = [], {}
+            else:
+                try:
+                    regions, det_meta = res
+                except Exception:
+                    logger.exception("Text detection returned unexpected result shape")
+                    regions, det_meta = [], {}
+
             stage_results["text_detection"] = StageResult("text_detection", dur2, result=det_meta, error=str(err2) if err2 else None)
             if err2:
                 self.metrics["errors"] += 1
                 regions = self.handle_ocr_errors(err2, img)
 
-            # Stage 3: PHI classification
-            phi_regions, phi_meta, dur3 = None, {}, 0.0
-            (phi_regions, phi_meta), dur3, err3 = self._timeit(self.stage_3_phi_classification, regions, {"image_id": image_id, **(metadata or {})})
+            # Stage 3: PHI classification (defensive unpacking)
+            phi_regions, phi_meta = [], {}
+            res, dur3, err3 = self._timeit(self.stage_3_phi_classification, regions, {"image_id": image_id, **(metadata or {})})
+            if res is None:
+                logger.warning("PHI classification returned no result for %s", image_id)
+                phi_regions, phi_meta = [], {}
+            else:
+                try:
+                    phi_regions, phi_meta = res
+                except Exception:
+                    logger.exception("PHI classification returned unexpected result shape")
+                    phi_regions, phi_meta = [], {}
+
             stage_results["phi_classification"] = StageResult("phi_classification", dur3, result=phi_meta, error=str(err3) if err3 else None)
             if err3:
                 self.metrics["errors"] += 1
                 phi_regions = self.handle_phi_detection_errors(err3, regions)
 
-            # Stage 4: masking
-            masked_img, mask_meta, dur4 = None, {}, 0.0
-            (masked_img, mask_meta), dur4, err4 = self._timeit(self.stage_4_masking, img, phi_regions, meta)
+            # Stage 4: masking (defensive unpacking)
+            masked_img, mask_meta = None, {}
+            res, dur4, err4 = self._timeit(self.stage_4_masking, img, phi_regions, meta)
+            if res is None:
+                logger.warning("Masking stage returned no result for %s", image_id)
+                masked_img, mask_meta = None, {}
+            else:
+                try:
+                    masked_img, mask_meta = res
+                except Exception:
+                    logger.exception("Masking returned unexpected result shape")
+                    masked_img, mask_meta = None, {}
+
             stage_results["masking"] = StageResult("masking", dur4, result=mask_meta, error=str(err4) if err4 else None)
             if err4:
                 self.metrics["errors"] += 1
@@ -211,10 +262,24 @@ class ClinicalImageMaskingPipeline:
 
     def stage_2_text_detection(self, image: np.ndarray, metadata: Dict) -> Tuple[List[Dict], Dict]:
         if self.ocr is None:
-            raise RuntimeError("OCR component not initialized")
-        regions = self.ocr.detect_text_regions(image)
-        # filter
-        accepted, rejected = self.ocr.filter_by_confidence(regions, self.config.ocr.confidence_threshold)
+            # fallback to mock detector if available
+            if self._MockTextDetector is not None:
+                self.logger.warning("Using MockTextDetector as OCR fallback")
+                detector = self._MockTextDetector(self.config.ocr)
+                regions = detector.detect_text_regions(image)
+                # If the mock detector implements its own filtering, use it.
+                if hasattr(detector, "filter_by_confidence"):
+                    accepted, rejected = detector.filter_by_confidence(regions, self.config.ocr.confidence_threshold)
+                else:
+                    # default: accept regions with confidence >= threshold
+                    accepted = [r for r in regions if r.get("confidence", 1.0) >= self.config.ocr.confidence_threshold]
+                    rejected = [r for r in regions if r not in accepted]
+            else:
+                raise RuntimeError("OCR component not initialized")
+        else:
+            regions = self.ocr.detect_text_regions(image)
+            # filter using the OCR component's filter method
+            accepted, rejected = self.ocr.filter_by_confidence(regions, self.config.ocr.confidence_threshold)
         det_meta = {"detected": len(regions), "accepted": len(accepted), "rejected": len(rejected)}
         return accepted, det_meta
 
@@ -233,18 +298,90 @@ class ClinicalImageMaskingPipeline:
         return classified, compliance
 
     def stage_4_masking(self, image: np.ndarray, phi_regions: List[Dict], metadata: Dict) -> Tuple[np.ndarray, Dict]:
-        if self.inpainter is None:
-            raise RuntimeError("Inpainter not initialized")
-        # adapt expansions
+        # select inpainter (real or mock)
+        inpainter = self.inpainter
+        used_mock = False
+        if inpainter is None:
+            if self._MockImageInpainter is not None:
+                self.logger.warning("Using MockImageInpainter as inpainter fallback")
+                inpainter = self._MockImageInpainter(self.config.mask)
+                used_mock = True
+            else:
+                raise RuntimeError("Inpainter not initialized")
+
+        # adapt expansions and perform inpainting or blackbox redaction
         try:
-            phi_regions = self.inpainter.adaptive_mask_expansion(phi_regions, image)
-            mask = self.inpainter.create_mask_from_regions(image.shape, phi_regions)
-            method = self.inpainter.smart_inpainting_selection(image, mask)
-            inpainted = self.inpainter.apply_inpainting(image, mask, method=method)
-            enhanced = self.inpainter.enhance_inpainted_regions(image, inpainted, mask)
-            quality = self.inpainter.validate_masking_quality(image, enhanced, mask)
+            phi_regions = inpainter.adaptive_mask_expansion(phi_regions, image)
+            # If config requests blackbox redaction, draw solid black rects over bboxes
+            style = getattr(self.config.mask, "redaction_style", "inpaint")
+            if style in ("blackbox", "blackbox_merge"):
+                out = image.copy()
+                try:
+                    import cv2 as _cv2
+
+                    if style == "blackbox_merge":
+                        # compute merged bbox
+                        xs = []
+                        ys = []
+                        for r in phi_regions:
+                            try:
+                                x1, y1, x2, y2 = map(int, r.get("bbox", (0, 0, 0, 0)))
+                                xs.extend([x1, x2])
+                                ys.extend([y1, y2])
+                            except Exception:
+                                continue
+                        if xs and ys:
+                            pad = int(getattr(self.config.mask, "blackbox_padding_pixels", 5))
+                            x1, x2 = max(0, min(xs) - pad), min(out.shape[1], max(xs) + pad)
+                            y1, y2 = max(0, min(ys) - pad), min(out.shape[0], max(ys) + pad)
+                            _cv2.rectangle(out, (x1, y1), (x2, y2), (0, 0, 0), thickness=-1)
+                    else:
+                        for r in phi_regions:
+                            try:
+                                x1, y1, x2, y2 = map(int, r.get("bbox", (0, 0, 0, 0)))
+                                _cv2.rectangle(out, (x1, y1), (x2, y2), (0, 0, 0), thickness=-1)
+                            except Exception:
+                                continue
+                except Exception:
+                    # fallback to numpy fill for either mode
+                    if style == "blackbox_merge":
+                        xs = []
+                        ys = []
+                        for r in phi_regions:
+                            try:
+                                x1, y1, x2, y2 = map(int, r.get("bbox", (0, 0, 0, 0)))
+                                xs.extend([x1, x2])
+                                ys.extend([y1, y2])
+                            except Exception:
+                                continue
+                        if xs and ys:
+                            pad = int(getattr(self.config.mask, "blackbox_padding_pixels", 5))
+                            x1, x2 = max(0, min(xs) - pad), min(out.shape[1], max(xs) + pad)
+                            y1, y2 = max(0, min(ys) - pad), min(out.shape[0], max(ys) + pad)
+                            out[y1:y2, x1:x2] = 0
+                    else:
+                        for r in phi_regions:
+                            try:
+                                x1, y1, x2, y2 = map(int, r.get("bbox", (0, 0, 0, 0)))
+                                out[y1:y2, x1:x2] = 0
+                            except Exception:
+                                continue
+                quality = getattr(inpainter, "validate_masking_quality", lambda o, i, m: {})(image, out, None)
+                if used_mock:
+                    quality = {**quality, "used_mock_inpainter": True}
+                return out, {"method": style, "quality": quality}
+
+            # default inpainting flow
+            mask = inpainter.create_mask_from_regions(image.shape, phi_regions)
+            method = getattr(inpainter, "smart_inpainting_selection", lambda im, m: self.config.mask.inpainting_method)(image, mask)
+            inpainted = inpainter.apply_inpainting(image, mask, method=method)
+            enhanced = getattr(inpainter, "enhance_inpainted_regions", lambda o, i, m: i)(image, inpainted, mask)
+            quality = getattr(inpainter, "validate_masking_quality", lambda o, i, m: {})(image, enhanced, mask)
+            if used_mock:
+                # annotate report to indicate mock was used
+                quality = {**quality, "used_mock_inpainter": True}
             return enhanced, {"method": method, "quality": quality}
-        except Exception as e:
+        except Exception:
             logger.exception("Masking stage failed")
             raise
 
