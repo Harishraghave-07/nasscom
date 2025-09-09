@@ -1,0 +1,22 @@
+{
+  "easyocr": {
+    "status": "OK",
+    "can_detect_text": true,
+    "detected_text": [
+      "TEST"
+    ]
+  },
+  "opencv": {
+    "status": "OK",
+    "inpainting_works": true,
+    "version": "4.11.0"
+  },
+  "spacy": {
+    "status": "FAILED",
+    "error": "spacy not available"
+  },
+  "numpy": {
+    "status": "OK",
+    "version": "1.26.4"
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "environment": {
+    "python_version": "3.13.7 (main, Aug 14 2025, 11:12:11) [Clang 17.0.0 (clang-1700.0.13.3)]",
+    "cwd": "/Users/harishraghave/Downloads/nasscom",
+    "env": {
+      "PYTHONPATH": null,
+      "VIRTUAL_ENV": "/Users/harishraghave/Downloads/nasscom/.venv"
+    }
+  },
+  "dependencies": {
+    "easyocr": {
+      "status": "OK",
+      "can_detect_text": true,
+      "detected_text": [
+        "TEST"
+      ]
+    },
+    "opencv": {
+      "status": "OK",
+      "inpainting_works": true,
+      "version": "4.11.0"
+    },
+    "spacy": {
+      "status": "FAILED",
+      "error": "spacy not available"
+    },
+    "numpy": {
+      "status": "OK",
+      "version": "1.26.4"
+    }
+  },
+  "configuration": {
+    "paths_checked": [
+      "src/core/config.py"
+    ],
+    "has_temp_dir": true,
+    "has_logs_dir": true
+  },
+  "file_permissions": {
+    "logs": {
+      "exists": true,
+      "mode": "0o755",
+      "writable": true
+    },
+    "temp": {
+      "exists": true,
+      "mode": "0o755",
+      "writable": true
+    },
+    "data": {
+      "exists": true,
+      "mode": "0o755",
+      "writable": true
+    }
+  },
+  "model_availability": {
+    "spacy": {
+      "installed": false,
+      "error": "No module named 'spacy'"
+    }
+  },
+  "sample_processing": {
+    "detections_count": 1
+  }
+}

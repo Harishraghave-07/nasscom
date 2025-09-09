@@ -1,0 +1,6 @@
+{
+  "spacy": {
+    "installed": false,
+    "error": "No module named 'spacy'"
+  }
+}

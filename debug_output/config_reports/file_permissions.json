@@ -1,0 +1,17 @@
+{
+  "logs": {
+    "exists": true,
+    "mode": "0o755",
+    "writable": true
+  },
+  "temp": {
+    "exists": true,
+    "mode": "0o755",
+    "writable": true
+  },
+  "data": {
+    "exists": true,
+    "mode": "0o755",
+    "writable": true
+  }
+}

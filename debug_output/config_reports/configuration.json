@@ -1,0 +1,7 @@
+{
+  "paths_checked": [
+    "src/core/config.py"
+  ],
+  "has_temp_dir": true,
+  "has_logs_dir": true
+}
