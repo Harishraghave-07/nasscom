@@ -159,22 +159,151 @@ class PHIClassifier:
         Returns list of detection dicts with fields: text, start, end, phi_type,
         confidence, method, metadata.
         """
+        # Pseudocode / desired detection order:
+        # 1) If config.use_presidio is True: call a Presidio Analyzer and return results (filtered by per-type threshold)
+        # 2) Else if config.use_spacy_fallback is True: run spaCy NER only, map labels -> HIPAA types, filter by thresholds
+        # 3) Else if config.use_regex_fallback is True: run regex patterns only and return filtered results
+        # 4) If none of the above flags are present, fall back to the previous behavior (regex + spaCy merged)
+        #
+        # Each step must:
+        # - produce detection dicts with keys: text, start, end, phi_type (label), confidence (float 0..1), method
+        # - apply a per-type confidence threshold (self._thresholds[phi_type] or default)
+        # - aggregate detections into a single list (no duplicates; prefer higher-confidence overlaps)
+
         if not text:
             return []
 
         start_time = time.time()
 
+        # determine feature flags (backwards-compatible defaults)
+        use_presidio = getattr(self.config, "use_presidio", False)
+        use_spacy_fallback = getattr(self.config, "use_spacy_fallback", None)
+        if use_spacy_fallback is None:
+            # maintain compatibility with existing flag name
+            use_spacy_fallback = bool(getattr(self.config, "enable_spacy_ner", False))
+        use_regex_fallback = getattr(self.config, "use_regex_fallback", None)
+        if use_regex_fallback is None:
+            use_regex_fallback = bool(getattr(self.config, "enable_regex_patterns", True))
+
+        detections: List[Dict[str, Any]] = []
+
+        # Helper: apply threshold filter
+        def _passes_threshold(d: Dict[str, Any]) -> bool:
+            try:
+                t = d.get("phi_type") or "other_unique_identifiers"
+                thresh = float(self._thresholds.get(t, float(self.config.phi_confidence_threshold)))
+            except Exception:
+                thresh = float(getattr(self.config, "phi_confidence_threshold", 0.8))
+            return float(d.get("confidence", 0.0)) >= thresh
+
+        # log input snippet + meta for auditing/monitoring
+        try:
+            short = (text or "")[:240]
+            logger.debug("detect_phi_in_text input snippet=%s meta=%s", short, context)
+        except Exception:
+            logger.debug("Failed to log input snippet")
+
+        # 1) Presidio path
+        if use_presidio:
+            try:
+                from src.integration.presidio_wrapper import get_analyzer
+
+                analyzer = get_analyzer()
+                pres_dets = analyzer.detect_phi_in_text(text, context or {}) or []
+                # log presidio raw responses for audit and monitoring
+                try:
+                    # normalize presidio responses to compact forms for audit
+                    pres_audit = [
+                        {"entity_type": p.get("entity_type") or p.get("label"), "start": p.get("start"), "end": p.get("end"), "score": float(p.get("score", p.get("confidence", 0.0))) if (p.get("score") is not None or p.get("confidence") is not None) else 0.0}
+                        for p in pres_dets
+                    ]
+                    self.audit_log(pres_audit, method_name="presidio_raw", context=context)
+                except Exception:
+                    logger.debug("Failed to audit presidio responses")
+                # map presidio results to canonical format and filter by threshold
+                for p in pres_dets:
+                    d = {
+                        "text": p.get("text", text[p.get("start", 0) : p.get("end", 0)] if p.get("start") is not None and p.get("end") is not None else p.get("text", "")),
+                        "start": int(p.get("start", 0)),
+                        "end": int(p.get("end", 0)),
+                        "phi_type": p.get("entity_type") or p.get("label") or None,
+                        "method": "presidio",
+                        "confidence": float(p.get("score", p.get("confidence", 0.0))) if p.get("score") is not None or p.get("confidence") is not None else 0.0,
+                    }
+                    if _passes_threshold(d):
+                        detections.append(d)
+                # dedupe/merge by preferring presidio results (already collected)
+                try:
+                    self.audit_logger.info(json.dumps({"event": "detect_phi_in_text", "method": "presidio", "count": len(detections)}))
+                except Exception:
+                    logger.debug("Audit failed for presidio path")
+                return detections
+            except Exception:
+                logger.exception("Presidio path failed; falling through to configured fallbacks")
+
+        # 2) spaCy-only path
+        if use_spacy_fallback:
+            if self._spacy_available and self._spacy_nlp is not None:
+                try:
+                    doc = self._spacy_nlp(text)
+                    for ent in getattr(doc, "ents", []):
+                        label = ent.label_.lower()
+                        mapped = None
+                        if label in ("person", "per"):
+                            mapped = "names"
+                        elif label in ("date",):
+                            mapped = "dates"
+                        elif label in ("gpe", "loc"):
+                            mapped = "geographic_locations"
+                        elif label in ("email",):
+                            mapped = "email_addresses"
+                        if mapped:
+                            d = {"text": ent.text, "start": ent.start_char, "end": ent.end_char, "phi_type": mapped, "method": "ner", "confidence": 0.9}
+                            if _passes_threshold(d):
+                                detections.append(d)
+                except Exception:
+                    logger.exception("spaCy-only detection failed")
+            try:
+                self.audit_logger.info(json.dumps({"event": "detect_phi_in_text", "method": "spacy_only", "count": len(detections)}))
+            except Exception:
+                pass
+            return detections
+
+        # 3) regex-only path
+        if use_regex_fallback:
+            try:
+                # run regex matches
+                for tname, pattern in self._patterns.items():
+                    for m in pattern.finditer(text):
+                        d = {"text": m.group(0), "start": m.start(), "end": m.end(), "phi_type": tname, "method": "regex", "confidence": 0.6}
+                        if _passes_threshold(d):
+                            detections.append(d)
+                for name, pat in self.custom_patterns.items():
+                    for m in pat.finditer(text):
+                        d = {"text": m.group(0), "start": m.start(), "end": m.end(), "phi_type": name, "method": "custom_regex", "confidence": 0.8}
+                        if _passes_threshold(d):
+                            detections.append(d)
+            except Exception:
+                logger.exception("Regex-only detection failed")
+            try:
+                self.audit_logger.info(json.dumps({"event": "detect_phi_in_text", "method": "regex_only", "count": len(detections)}))
+            except Exception:
+                pass
+            return detections
+
+        # 4) default (legacy) behavior: run both regex + spaCy and merge results
+        # This preserves existing behavior when no explicit flags are provided.
         # run regex matches
         regex_results: List[PHIDetection] = []
         for tname, pattern in self._patterns.items():
             for m in pattern.finditer(text):
-                det = PHIDetection(text=m.group(0), start=m.start(), end=m.end(), phi_type=tname, method="regex")
+                det = PHIDetection(text=m.group(0), start=m.start(), end=m.end(), phi_type=tname, method="regex", confidence=0.6)
                 regex_results.append(det)
 
         # run custom patterns
         for name, pat in self.custom_patterns.items():
             for m in pat.finditer(text):
-                det = PHIDetection(text=m.group(0), start=m.start(), end=m.end(), phi_type=name, method="custom_regex")
+                det = PHIDetection(text=m.group(0), start=m.start(), end=m.end(), phi_type=name, method="custom_regex", confidence=0.8)
                 regex_results.append(det)
 
         # run spaCy NER if available
@@ -184,7 +313,6 @@ class PHIClassifier:
                 doc = self._spacy_nlp(text)
                 for ent in getattr(doc, "ents", []):
                     label = ent.label_.lower()
-                    # map common spaCy labels to HIPAA types conservatively
                     mapped = None
                     if label in ("person", "per"):
                         mapped = "names"
@@ -201,7 +329,7 @@ class PHIClassifier:
 
         merged = self.merge_phi_detections([r.to_dict() for r in regex_results], [n.to_dict() for n in ner_results])
 
-        # apply context validation and compute confidence
+    # apply context validation and compute confidence
         final: List[Dict[str, Any]] = []
         for d in merged:
             ctx_conf = self.validate_phi_context(d.get("text", ""), context.get("surrounding_text", "") if context else "", d.get("phi_type", ""))
@@ -214,13 +342,20 @@ class PHIClassifier:
                 typ, score = self.classify_phi_type(d.get("text", ""), d.get("method", "regex"))
                 d["phi_type"] = typ
                 d["confidence"] = max(d["confidence"], score)
-            final.append(d)
-
+            # filter by per-type threshold
+            if _passes_threshold(d):
+                final.append(d)
         # audit
         try:
             self.audit_logger.info(json.dumps({"event": "detect_phi_in_text", "count": len(final), "time_s": time.time() - start_time}))
         except Exception:
             logger.debug("Audit log failed for detect_phi_in_text")
+
+        # also write a structured audit record via audit_log for monitoring
+        try:
+            self.audit_log(final, method_name="merged_regex_ner", context=context)
+        except Exception:
+            logger.debug("audit_log failed for merged results")
 
         return final
 
@@ -433,6 +568,43 @@ class PHIClassifier:
             self.audit_logger.info(json.dumps(rec))
         except Exception:
             logger.exception("Failed to write PHI audit record")
+
+    def audit_log(self, detections: List[Dict[str, Any]], method_name: str, context: Optional[Dict[str, Any]] = None) -> None:
+        """Write a compact audit record for a batch of detections.
+
+        This helper centralizes audit writing so downstream systems can
+        monitor detection performance, correlate detections with source
+        (page/bbox/image_id), and compute false-positive/false-negative
+        metrics over time. Records should be redacted by the logging
+        configuration before persistence.
+
+        - detections: list of detection dicts (keys: entity_type, start, end, score, text)
+        - method_name: string indicating which detector produced the results
+        - context: optional metadata (image_id, page, bbox, surrounding_text)
+        """
+        try:
+            # Optionally redact detection text snippets before persisting
+            redacted = []
+            for d in detections:
+                item = dict(d)
+                if getattr(self.config, "audit_redact_snippets", False):
+                    item["text"] = "[REDACTED_SNIPPET]"
+                redacted.append(item)
+
+            rec = {"method": method_name, "count": len(detections), "detections": redacted, "context": context or {}, "ts": time.time()}
+            # Write to the audit logger; the formatter can additionally redact
+            self.audit_logger.info(json.dumps(rec, default=str))
+
+            # Optionally write a non-redacted audit stream for trusted review
+            if getattr(self.config, "audit_allow_nonredacted", False):
+                try:
+                    nr_logger = logging.getLogger(getattr(self.config, "nonredacted_audit_logger_name", "cim.audit.phi_raw"))
+                    nr_rec = {"method": method_name, "count": len(detections), "detections": detections, "context": context or {}, "ts": time.time()}
+                    nr_logger.info(json.dumps(nr_rec, default=str))
+                except Exception:
+                    logger.exception("Failed to write non-redacted audit log")
+        except Exception:
+            logger.exception("Failed to write audit_log for %s", method_name)
 
     def generate_phi_report(self, detections: List[Dict[str, Any]], image_metadata: Dict[str, Any]) -> Dict[str, Any]:
         counts = defaultdict(int)

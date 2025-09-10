@@ -1,0 +1,66 @@
+{
+  "image_id": "page_001_masked",
+  "stages": {
+    "preprocess": {
+      "name": "preprocess",
+      "duration_s": 0.016371375000744592,
+      "result": {
+        "orig_shape": [
+          1685,
+          1685
+        ],
+        "processed_shape": [
+          1685,
+          1685,
+          3
+        ],
+        "anonymized_text": null
+      },
+      "error": null
+    },
+    "text_detection": {
+      "name": "text_detection",
+      "duration_s": 5.396972624999762,
+      "result": {
+        "detected": 1,
+        "accepted": 0,
+        "rejected": 1
+      },
+      "error": null
+    },
+    "phi_classification": {
+      "name": "phi_classification",
+      "duration_s": 0.00010370800009695813,
+      "result": {
+        "phi_count": 0,
+        "used_presidio": false,
+        "shadow_mode": false
+      },
+      "error": null
+    },
+    "masking": {
+      "name": "masking",
+      "duration_s": 0.31926616599957924,
+      "result": {
+        "method": "telea",
+        "quality": {
+          "psnr": 45.26219177246094,
+          "ssim": 0.9994985673533675,
+          "edge_preservation": 1.0,
+          "texture_consistency": 0.9999979138374329,
+          "notes": []
+        }
+      },
+      "error": null
+    }
+  },
+  "quality": {
+    "total_time_s": 5.764491541000098
+  },
+  "metrics": {
+    "processed": 1,
+    "errors": 0,
+    "stages": {}
+  },
+  "timestamp": 1757496047.4003599
+}

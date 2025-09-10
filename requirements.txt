@@ -14,3 +14,7 @@ certifi
 charset_normalizer
 sniffio
 rfc3986
+# Microsoft Presidio for PII Detection
+presidio-analyzer
+presidio-anonymizer
+spacy

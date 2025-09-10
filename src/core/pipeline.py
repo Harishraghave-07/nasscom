@@ -14,12 +14,16 @@ import os
 import shutil
 import tempfile
 import time
+import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import numpy as np
+import random
+import re
+from pathlib import Path
 
 from src.core.config import AppConfig, SETTINGS
 
@@ -37,6 +41,16 @@ class StageResult:
 class ClinicalImageMaskingPipeline:
     def __init__(self, config: AppConfig):
         self.config = config
+        # apply any operator overrides from the runtime config into POLICY_MATRIX
+        try:
+            from src.integration.config_loader import apply_operator_overrides
+            from src.integration.policy_matrix import POLICY_MATRIX
+
+            # config may be pydantic BaseSettings; convert to dict if needed
+            cfg_dict = getattr(config, "dict", lambda: config)()
+            apply_operator_overrides(cfg_dict, POLICY_MATRIX)
+        except Exception:
+            logger.debug("No operator overrides applied or config loader unavailable")
         # instance logger for pipeline-level messages
         self.logger = logging.getLogger("ClinicalImageMaskingPipeline")
         # set up logging and audit trail
@@ -94,9 +108,72 @@ class ClinicalImageMaskingPipeline:
         except Exception as e:
             return None, time.perf_counter() - t0, e
 
+    # ---------------- integration helper for external PII analyzers ----------------
+    def detect_phi_in_text(self, text: str, meta: Optional[Dict] = None) -> List[Dict]:
+        """Integration hook for an external PII/Presidio analyzer.
+
+        - text: the extracted text to analyze
+        - meta: optional metadata (source: 'ocr'|'native_pdf'|'scanned_pdf', bbox, page, etc.)
+
+        Returns a list of detection dicts in the form expected by downstream stages.
+        This is a placeholder that calls into the PHI classifier when available.
+        Replace or extend this method to call Presidio Analyzer/Recognizer as needed.
+        """
+        meta = meta or {}
+        try:
+            # prefer a central presidio wrapper if available
+            try:
+                from src.integration.presidio_wrapper import get_analyzer
+
+                analyzer = get_analyzer()
+                return analyzer.detect_phi_in_text(text, meta)
+            except Exception:
+                # fallback to internal PHI classifier if present
+                if self.phi is not None and hasattr(self.phi, "detect_phi_in_text"):
+                    return self.phi.detect_phi_in_text(text, meta)
+                return []
+        except Exception:
+            logger.exception("detect_phi_in_text hook failed")
+            return []
+
     # ---------------- single-image pipeline ----------------
     def process_single_image(self, input_path: str, output_path: Optional[str] = None, metadata: Optional[Dict] = None) -> Dict[str, Any]:
         image_id = Path(input_path).stem
+        # Canary routing for Presidio-based detection: choose per-image whether
+        # to route this request to the new Presidio pipeline. The percentage is
+        # configurable via the AppConfig (attribute `presidio_canary_percentage`)
+        # or via a `config.yaml` file with key `presidio_canary_percentage: N`.
+        presidio_pct = 0
+        try:
+            # prefer explicit attribute on the provided config
+            presidio_pct = int(getattr(self.config, "presidio_canary_percentage", 0) or 0)
+        except Exception:
+            presidio_pct = 0
+
+        if presidio_pct <= 0:
+            # fallback: try to read repository config yaml (best-effort, lightweight)
+            try:
+                for cfg_path in (Path("config.yaml"), Path("config") / "config.yaml"):
+                    if cfg_path.exists():
+                        txt = cfg_path.read_text(encoding="utf-8")
+                        m = re.search(r"presidio_canary_percentage\s*:\s*(\d{1,3})", txt)
+                        if m:
+                            try:
+                                presidio_pct = int(m.group(1))
+                                break
+                            except Exception:
+                                presidio_pct = 0
+            except Exception:
+                presidio_pct = presidio_pct or 0
+
+        # clamp to sensible bounds
+        presidio_pct = max(0, min(100, int(presidio_pct or 0)))
+
+        # roll the dice for this image
+        roll = random.randint(1, 100)
+        use_presidio_pipeline = roll <= presidio_pct
+        self.logger.info("Presidio canary routing: roll=%d presidio_pct=%d use_presidio=%s for image=%s", roll, presidio_pct, use_presidio_pipeline, image_id)
+
         session_temp = Path(tempfile.mkdtemp(prefix=f"cim_{image_id}_", dir=str(self._temp_root)))
         stage_results: Dict[str, StageResult] = {}
         overall_start = time.perf_counter()
@@ -143,7 +220,14 @@ class ClinicalImageMaskingPipeline:
 
             # Stage 3: PHI classification (defensive unpacking)
             phi_regions, phi_meta = [], {}
-            res, dur3, err3 = self._timeit(self.stage_3_phi_classification, regions, {"image_id": image_id, **(metadata or {})})
+            # Determine shadow mode setting
+            shadow_mode = bool(getattr(self.config, "shadow_mode_enabled", False))
+            # pass the canary decision into the phi classification stage via context
+            res, dur3, err3 = self._timeit(
+                self.stage_3_phi_classification,
+                regions,
+                {"image_id": image_id, "use_presidio_pipeline": use_presidio_pipeline, "shadow_mode": shadow_mode, **(metadata or {})},
+            )
             if res is None:
                 logger.warning("PHI classification returned no result for %s", image_id)
                 phi_regions, phi_meta = [], {}
@@ -158,6 +242,69 @@ class ClinicalImageMaskingPipeline:
             if err3:
                 self.metrics["errors"] += 1
                 phi_regions = self.handle_phi_detection_errors(err3, regions)
+
+            # Optional anonymization step: if a Presidio Anonymizer is available,
+            # run it once per page to produce `anonymized_text` and let the
+            # anonymizer apply operators according to POLICY_MATRIX.
+            #
+            # This block expects:
+            # - `detections`: list of analyzer entities with keys: label/entity_type, score, start, end, page, bbox
+            # - raw page text in `meta.get('page_text')` or as a fallback we join region texts
+            #
+            # The anonymizer usually returns anonymized_text and may adjust offsets
+            # depending on operator parameters. TODO: Ensure offsets remain valid
+            # for downstream masking: either use operators that preserve length
+            # (masking) or recompute bboxes from token-to-char mapping after
+            # replacement. For now we attempt to run anonymizer and retain the
+            # original detection spans.
+            try:
+                page_text = None
+                if isinstance(meta, dict):
+                    page_text = meta.get("page_text")
+                if not page_text:
+                    # fallback: concatenate region text in document order
+                    page_text = " ".join([r.get("text", "") for r in regions or []])
+
+                # lazy import of presidio anonymizer classes
+                from presidio_anonymizer import AnonymizerEngine, OperatorConfig  # type: ignore
+                from src.integration.policy_matrix import POLICY_MATRIX
+
+                # Build operators dict expected by AnonymizerEngine
+                operators = {}
+                for det in (phi_regions or []):
+                    ent = det.get("phi_type") or det.get("entity_type")
+                    if not ent:
+                        continue
+                    pm = POLICY_MATRIX.get(ent.upper()) or POLICY_MATRIX.get(ent) or None
+                    if not pm:
+                        # default operator: replace with generic placeholder
+                        operators[ent] = [OperatorConfig("replace", {"new_value": "[REDACTED]"})]
+                        continue
+                    op_name = pm.get("operator", "replace")
+                    params = pm.get("params", {}) or {}
+                    # build OperatorConfig — constructor may differ depending on Presidio version
+                    try:
+                        operators[ent] = [OperatorConfig(op_name, params)]
+                    except Exception:
+                        # fallback to a simple mapping if OperatorConfig unavailable
+                        operators[ent] = [{"type": op_name, "params": params}]
+
+                engine = AnonymizerEngine()
+                anonymized = engine.anonymize(text=page_text, analyzer_results=phi_regions, operators=operators)
+
+                # anonymized is expected to have .text (or ['text']) depending on version
+                anonymized_text = getattr(anonymized, "text", None) or (anonymized.get("text") if isinstance(anonymized, dict) else None)
+
+                # TODO: Recompute detection offsets if operator changes lengths.
+                # For now, keep original `phi_regions` spans and attach a flag.
+                for d in (phi_regions or []):
+                    d.setdefault("anonymized", True)
+                # store anonymized text in metadata for downstream steps
+                if isinstance(meta, dict):
+                    meta["anonymized_text"] = anonymized_text
+            except Exception:
+                # anonymizer not available or failed; continue without anonymized text
+                logger.debug("Anonymizer step skipped or failed; proceeding to masking")
 
             # Stage 4: masking (defensive unpacking)
             masked_img, mask_meta = None, {}
@@ -286,15 +433,69 @@ class ClinicalImageMaskingPipeline:
     def stage_3_phi_classification(self, text_regions: List[Dict], context: Dict) -> Tuple[List[Dict], Dict]:
         if self.phi is None:
             raise RuntimeError("PHI classifier not initialized")
+
         classified = []
+        use_presidio = bool(context.get("use_presidio_pipeline", False))
+        shadow_mode = bool(context.get("shadow_mode", False))
+
+        # prepare per-document collections for shadow auditing when needed
+        legacy_report = {"detections": []}
+        presidio_report = {"detections": []}
+
         for r in text_regions:
             t = r.get("text", "")
-            detections = self.phi.detect_phi_in_text(t, {"surrounding_text": context.get("surrounding_text", "")})
-            # attach region bbox
-            for d in detections:
+
+            # Legacy (current) detector always runs to produce authoritative output
+            try:
+                legacy_detections = self.phi.detect_phi_in_text(t, {"surrounding_text": context.get("surrounding_text", "")})
+            except Exception:
+                self.logger.exception("Legacy PHI classifier failed for region=%s", r.get("bbox"))
+                legacy_detections = []
+
+            # attach bbox and record
+            for d in legacy_detections:
                 d["bbox"] = r.get("bbox")
-            classified.extend(detections)
-        compliance = {"phi_count": len(classified)}
+            legacy_report["detections"].extend(legacy_detections)
+
+            # If canary enabled, run Presidio too (either shadow or active)
+            presidio_detections = []
+            if use_presidio:
+                try:
+                    from src.integration.presidio_wrapper import get_analyzer
+
+                    analyzer = get_analyzer()
+                    presidio_detections = analyzer.detect_phi_in_text(t, {"surrounding_text": context.get("surrounding_text", "")})
+                    for d in presidio_detections:
+                        d["bbox"] = r.get("bbox")
+                    presidio_report["detections"].extend(presidio_detections)
+                except Exception:
+                    self.logger.exception("Presidio analyzer failed for region=%s", r.get("bbox"))
+
+            # Decide which detections to use for final masking: legacy unless
+            # canary is active and shadow mode is disabled (i.e., fully switch).
+            if use_presidio and not shadow_mode:
+                chosen = presidio_detections or legacy_detections
+            else:
+                chosen = legacy_detections
+
+            # Append chosen detections to classified list
+            classified.extend(chosen)
+
+        compliance = {"phi_count": len(classified), "used_presidio": use_presidio, "shadow_mode": shadow_mode}
+
+        # If shadow mode is enabled and we ran presidio, persist both outputs
+        if shadow_mode and use_presidio:
+            try:
+                from src.debug.audit_log import log_shadow_audit
+
+                doc_id = str(context.get("image_id") or context.get("doc_id") or "unknown")
+                # write a compact summary for both detectors
+                log_shadow_audit(doc_id, legacy_report, presidio_report)
+            except Exception:
+                self.logger.exception("Failed to write shadow audit for doc=%s", context.get("image_id"))
+
+        # log summary of decision
+        self.logger.info("PHI classification: used_presidio=%s shadow_mode=%s detections=%d", use_presidio, shadow_mode, len(classified))
         return classified, compliance
 
     def stage_4_masking(self, image: np.ndarray, phi_regions: List[Dict], metadata: Dict) -> Tuple[np.ndarray, Dict]:

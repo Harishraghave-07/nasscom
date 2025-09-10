@@ -1,0 +1,206 @@
+{
+  "input_pdf": "Highlighted PHI Details Emily_Dawson.pdf",
+  "reports": [
+    {
+      "image_id": "page_001",
+      "stages": {
+        "preprocess": {
+          "name": "preprocess",
+          "duration_s": 0.012812750001103268,
+          "result": {
+            "orig_shape": [
+              1685,
+              1191
+            ],
+            "processed_shape": [
+              1685,
+              1685,
+              3
+            ],
+            "anonymized_text": null
+          },
+          "error": null
+        },
+        "text_detection": {
+          "name": "text_detection",
+          "duration_s": 5.6312707500001125,
+          "result": {
+            "detected": 1,
+            "accepted": 0,
+            "rejected": 1
+          },
+          "error": null
+        },
+        "phi_classification": {
+          "name": "phi_classification",
+          "duration_s": 0.00010420899889140856,
+          "result": {
+            "phi_count": 0,
+            "used_presidio": false,
+            "shadow_mode": false
+          },
+          "error": null
+        },
+        "masking": {
+          "name": "masking",
+          "duration_s": 0.25871154199921875,
+          "result": {
+            "method": "blackbox",
+            "quality": {
+              "psnr": 0.0,
+              "ssim": 0.0,
+              "edge_preservation": 0.0,
+              "texture_consistency": 0.0
+            }
+          },
+          "error": null
+        }
+      },
+      "quality": {
+        "total_time_s": 5.984258999998929
+      },
+      "metrics": {
+        "processed": 3,
+        "errors": 0,
+        "stages": {}
+      },
+      "timestamp": 1757495810.193425,
+      "input": "/var/folders/_5/yxm6dd5s3pjbmxmp6g3x1xgc0000gn/T/verif_pdf_whj7k62e/page_001.png",
+      "masked_output": "debug_output/verification/gateway_run/20250910_144640/page_001_masked.png"
+    },
+    {
+      "image_id": "page_002",
+      "stages": {
+        "preprocess": {
+          "name": "preprocess",
+          "duration_s": 0.0060977079992881045,
+          "result": {
+            "orig_shape": [
+              1685,
+              1191
+            ],
+            "processed_shape": [
+              1685,
+              1685,
+              3
+            ],
+            "anonymized_text": null
+          },
+          "error": null
+        },
+        "text_detection": {
+          "name": "text_detection",
+          "duration_s": 5.050621042000785,
+          "result": {
+            "detected": 1,
+            "accepted": 0,
+            "rejected": 1
+          },
+          "error": null
+        },
+        "phi_classification": {
+          "name": "phi_classification",
+          "duration_s": 9.658300041337498e-05,
+          "result": {
+            "phi_count": 0,
+            "used_presidio": false,
+            "shadow_mode": false
+          },
+          "error": null
+        },
+        "masking": {
+          "name": "masking",
+          "duration_s": 0.2589275419995829,
+          "result": {
+            "method": "blackbox",
+            "quality": {
+              "psnr": 0.0,
+              "ssim": 0.0,
+              "edge_preservation": 0.0,
+              "texture_consistency": 0.0
+            }
+          },
+          "error": null
+        }
+      },
+      "quality": {
+        "total_time_s": 5.335538666999128
+      },
+      "metrics": {
+        "processed": 3,
+        "errors": 0,
+        "stages": {}
+      },
+      "timestamp": 1757495815.530496,
+      "input": "/var/folders/_5/yxm6dd5s3pjbmxmp6g3x1xgc0000gn/T/verif_pdf_whj7k62e/page_002.png",
+      "masked_output": "debug_output/verification/gateway_run/20250910_144640/page_002_masked.png"
+    },
+    {
+      "image_id": "page_003",
+      "stages": {
+        "preprocess": {
+          "name": "preprocess",
+          "duration_s": 0.006946749999769963,
+          "result": {
+            "orig_shape": [
+              1685,
+              1191
+            ],
+            "processed_shape": [
+              1685,
+              1685,
+              3
+            ],
+            "anonymized_text": null
+          },
+          "error": null
+        },
+        "text_detection": {
+          "name": "text_detection",
+          "duration_s": 4.9331477920004545,
+          "result": {
+            "detected": 1,
+            "accepted": 0,
+            "rejected": 1
+          },
+          "error": null
+        },
+        "phi_classification": {
+          "name": "phi_classification",
+          "duration_s": 8.091700146906078e-05,
+          "result": {
+            "phi_count": 0,
+            "used_presidio": false,
+            "shadow_mode": false
+          },
+          "error": null
+        },
+        "masking": {
+          "name": "masking",
+          "duration_s": 0.25963366699943435,
+          "result": {
+            "method": "blackbox",
+            "quality": {
+              "psnr": 0.0,
+              "ssim": 0.0,
+              "edge_preservation": 0.0,
+              "texture_consistency": 0.0
+            }
+          },
+          "error": null
+        }
+      },
+      "quality": {
+        "total_time_s": 5.218672499999229
+      },
+      "metrics": {
+        "processed": 3,
+        "errors": 0,
+        "stages": {}
+      },
+      "timestamp": 1757495820.750604,
+      "input": "/var/folders/_5/yxm6dd5s3pjbmxmp6g3x1xgc0000gn/T/verif_pdf_whj7k62e/page_003.png",
+      "masked_output": "debug_output/verification/gateway_run/20250910_144640/page_003_masked.png"
+    }
+  ]
+}

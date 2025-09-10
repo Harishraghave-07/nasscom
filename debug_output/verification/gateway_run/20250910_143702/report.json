@@ -1,0 +1,27 @@
+{
+  "reports": [
+    {
+      "image_id": "fake_phi_document",
+      "error": "Preprocessing failed and recovery unsuccessful",
+      "stages": {
+        "preprocess": {
+          "name": "preprocess",
+          "duration_s": 0.002305792000697693,
+          "result": {},
+          "error": "Could not find a backend to open `/Users/harishraghave/Downloads/nasscom/fake_phi_document.pdf`` with iomode `ri`."
+        },
+        "preprocess_recovery": {
+          "name": "preprocess_recovery",
+          "duration_s": 0.0,
+          "result": {
+            "failed": true
+          },
+          "error": null
+        }
+      },
+      "input": "/Users/harishraghave/Downloads/nasscom/fake_phi_document.pdf",
+      "masked_output": "debug_output/verification/gateway_run/20250910_143702/fake_phi_document_masked.png"
+    }
+  ],
+  "input": "/Users/harishraghave/Downloads/nasscom/fake_phi_document.pdf"
+}

@@ -1,0 +1,49 @@
+## Presidio & PHI detection configuration
+##
+## Toggle which detection backends the pipeline should prefer. These are
+## intentionally simple booleans so environment-specific overrides are easy.
+
+# If true, the pipeline will attempt to call the Presidio Analyzer first.
+use_presidio: false
+
+# If true, the pipeline will run spaCy NER as an explicit fallback (or
+# standalone analyzer when `use_presidio` is false and this is true).
+use_spacy_fallback: true
+
+# If true, run regex-based detection as a fallback or standalone analyzer.
+use_regex_fallback: true
+
+## Per-tier confidence thresholds used when applying Presidio results.
+## These allow stricter filtering for critical/high-priority entity tiers
+## and more permissive acceptance for contextual or emerging entities.
+presidio_confidence_thresholds:
+  # Entities considered critical (for example: national IDs, MRNs)
+  critical: 0.95
+  # High-priority PHI (emails, phone numbers, medical record ids)
+  high_priority: 0.90
+  # Contextual fields where surrounding text matters (addresses, dates)
+  contextual: 0.75
+  # Emerging or lower-confidence recognizers (labels from experimental models)
+  emerging: 0.60
+
+# Confidence threshold for spaCy NER detections (0.0 - 1.0).
+# spaCy does not always expose per-entity probabilistic scores; use this
+# threshold to accept/dismiss mapped NER labels conservatively.
+spacy_confidence_threshold: 0.85
+
+# Regex confidence overrides: if a regex pattern is highly specific you can
+# raise its effective confidence here; this can be a global scalar or a map
+# of pattern-name -> threshold. Examples:
+#   regex_confidence_override: 0.65
+#   regex_confidence_override:
+#     social_security_numbers: 0.99
+#     medical_record_numbers: 0.95
+regex_confidence_override: 0.6
+
+# Notes:
+# - Lowering thresholds increases recall but risks false positives; prefer
+#   conservative defaults for clinical PHI detection and route marginal
+#   detections to manual review.
+# - Batch entity lists (send multiple entity names in a single call to the
+#   analyzer) improves performance by avoiding repeated tokenization or
+#   model invocations and lets the analyzer resolve overlapping spans.

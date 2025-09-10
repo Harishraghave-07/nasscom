@@ -1,0 +1,141 @@
+{
+  "input_pdf": "/Users/harishraghave/Downloads/nasscom/fake_phi_document.pdf",
+  "reports": [
+    {
+      "image_id": "page_001",
+      "stages": {
+        "preprocess": {
+          "name": "preprocess",
+          "duration_s": 0.017044750000422937,
+          "result": {
+            "orig_shape": [
+              1684,
+              1191
+            ],
+            "processed_shape": [
+              1684,
+              1684,
+              3
+            ],
+            "anonymized_text": null
+          },
+          "error": null
+        },
+        "text_detection": {
+          "name": "text_detection",
+          "duration_s": 6.343853207999928,
+          "result": {
+            "detected": 1,
+            "accepted": 0,
+            "rejected": 1
+          },
+          "error": null
+        },
+        "phi_classification": {
+          "name": "phi_classification",
+          "duration_s": 9.737500113260467e-05,
+          "result": {
+            "phi_count": 0,
+            "used_presidio": false,
+            "shadow_mode": false
+          },
+          "error": null
+        },
+        "masking": {
+          "name": "masking",
+          "duration_s": 0.33355500000106986,
+          "result": {
+            "method": "telea",
+            "quality": {
+              "psnr": 43.97412109375,
+              "ssim": 0.999624026930944,
+              "edge_preservation": 1.0,
+              "texture_consistency": 0.9998727440834045,
+              "notes": []
+            }
+          },
+          "error": null
+        }
+      },
+      "quality": {
+        "total_time_s": 7.094615916999828
+      },
+      "metrics": {
+        "processed": 2,
+        "errors": 0,
+        "stages": {}
+      },
+      "timestamp": 1757495381.26922,
+      "input": "/var/folders/_5/yxm6dd5s3pjbmxmp6g3x1xgc0000gn/T/verif_pdf_puo4fus9/page_001.png",
+      "masked_output": "debug_output/verification/gateway_run/20250910_143930/page_001_masked.png"
+    },
+    {
+      "image_id": "page_002",
+      "stages": {
+        "preprocess": {
+          "name": "preprocess",
+          "duration_s": 0.0064871659997152165,
+          "result": {
+            "orig_shape": [
+              1684,
+              1191
+            ],
+            "processed_shape": [
+              1684,
+              1684,
+              3
+            ],
+            "anonymized_text": null
+          },
+          "error": null
+        },
+        "text_detection": {
+          "name": "text_detection",
+          "duration_s": 4.836608416999297,
+          "result": {
+            "detected": 1,
+            "accepted": 0,
+            "rejected": 1
+          },
+          "error": null
+        },
+        "phi_classification": {
+          "name": "phi_classification",
+          "duration_s": 8.87079986569006e-05,
+          "result": {
+            "phi_count": 0,
+            "used_presidio": false,
+            "shadow_mode": false
+          },
+          "error": null
+        },
+        "masking": {
+          "name": "masking",
+          "duration_s": 0.32062191700060794,
+          "result": {
+            "method": "telea",
+            "quality": {
+              "psnr": 49.57737731933594,
+              "ssim": 0.9998985633746443,
+              "edge_preservation": 1.0,
+              "texture_consistency": 0.9999855756759644,
+              "notes": []
+            }
+          },
+          "error": null
+        }
+      },
+      "quality": {
+        "total_time_s": 5.183515750000879
+      },
+      "metrics": {
+        "processed": 2,
+        "errors": 0,
+        "stages": {}
+      },
+      "timestamp": 1757495386.454677,
+      "input": "/var/folders/_5/yxm6dd5s3pjbmxmp6g3x1xgc0000gn/T/verif_pdf_puo4fus9/page_002.png",
+      "masked_output": "debug_output/verification/gateway_run/20250910_143930/page_002_masked.png"
+    }
+  ]
+}

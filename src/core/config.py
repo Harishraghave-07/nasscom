@@ -108,6 +108,18 @@ class PHIDetectionConfig(BaseModel):
     custom_phi_patterns: Dict[str, str] = Field(default_factory=dict)
     phi_confidence_threshold: float = Field(0.8, ge=0.0, le=1.0)
     enable_audit_logging: bool = True
+    # Whether audit logs should redact detected text snippets. When True,
+    # detections in persisted audit records will have their `text` field
+    # replaced with a placeholder to reduce risk of PHI leakage in logs.
+    audit_redact_snippets: bool = Field(False)
+    # When True, also publish a separate non-redacted audit stream for
+    # trusted internal review. This should only be used in controlled
+    # environments where access to raw PHI in logs is strictly audited.
+    audit_allow_nonredacted: bool = Field(False)
+    # Name of the non-redacted audit logger when `audit_allow_nonredacted`
+    # is enabled. The application logging config can route this logger to
+    # a protected sink.
+    nonredacted_audit_logger_name: str = Field("cim.audit.phi_raw")
 
     @validator("custom_phi_patterns", pre=True)
     def _ensure_valid_regexes(cls, v):
