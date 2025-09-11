@@ -1,0 +1,19 @@
+# Top-level dependency inputs (unlocked). Use this file with pip-tools
+# (pip-compile) or copy into a Poetry/other manifest as desired.
+# Keep this minimal; heavy optional packages (torch, easyocr, presidio)
+# should be pinned and installed only where required.
+
+pydantic
+numpy
+Pillow
+imageio
+opencv-python-headless
+python-multipart
+pytest
+
+# Optional / heavy (commented): uncomment and pin in a lockfile when needed
+# torch
+# torchvision
+# easyocr
+# presidio-analyzer
+# presidio-anonymizer

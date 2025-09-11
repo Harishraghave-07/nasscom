@@ -17,10 +17,9 @@ try:
 except Exception:  # pragma: no cover - environment dependent
     cv2 = None
 
-try:
-    import easyocr
-except Exception:  # pragma: no cover - environment dependent
-    easyocr = None
+# Note: EasyOCR is a heavy dependency; import lazily inside functions that
+# need it to avoid increasing module import time or requiring torch at
+# module import time in environments (tests, lightweight containers).
 
 
 class SimpleMasker:
@@ -49,13 +48,11 @@ class SimpleMasker:
         except Exception as e:
             results["opencv"] = {"installed": False, "error": str(e)}
 
-        # EasyOCR
+        # EasyOCR (lazy import)
         try:
-            if easyocr is None:
-                raise ImportError("easyocr not available")
-            # only attempt to initialize reader (may be slow)
+            import easyocr as _easyocr  # type: ignore
             try:
-                _reader = easyocr.Reader(["en"], gpu=self.ocr_gpu)
+                _reader = _easyocr.Reader(["en"], gpu=self.ocr_gpu)
                 results["easyocr"] = {"installed": True, "initialized": True}
             except Exception as ie:
                 results["easyocr"] = {"installed": True, "initialized": False, "error": str(ie)}
@@ -86,11 +83,13 @@ class SimpleMasker:
 
             self.logger.debug("Image loaded shape=%s", getattr(image, "shape", None))
 
-            if easyocr is None:
+            # Attempt to import EasyOCR lazily and initialize reader (force CPU)
+            try:
+                import easyocr  # type: ignore
+            except Exception:
                 self.logger.error("EasyOCR not installed; cannot detect text")
                 return {"error": "EasyOCR not installed", "success": False}
 
-            # initialize reader (force CPU)
             try:
                 reader = easyocr.Reader(["en"], gpu=self.ocr_gpu)
             except Exception as e:

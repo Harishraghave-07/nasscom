@@ -102,6 +102,9 @@ class OCRConfig(BaseModel):
     # dependencies (EasyOCR / torch) may be unavailable; detectors should
     # check this flag to degrade gracefully.
     enable_fallback: bool = True
+    # When True, critical OCR post-processing failures (like merging)
+    # will raise and surface to the caller instead of falling back silently.
+    fail_on_merge_error: bool = True
 
 
 class PHIDetectionConfig(BaseModel):
@@ -177,6 +180,11 @@ class MaskingConfig(BaseModel):
     blackbox_padding_pixels: int = Field(5, ge=0, le=200)
     # surgical masking padding (small per-entity padding when using 'surgical' style)
     surgical_padding_pixels: int = Field(2, ge=0, le=50)
+    # language-aware padding heuristics
+    lang_padding_default: int = Field(2, ge=0, le=100, description="Default surgical padding in pixels")
+    lang_padding_cjk: int = Field(6, ge=0, le=200, description="Surgical padding for CJK or dense fonts")
+    # allow tuning inpainting radius for dense scripts
+    inpainting_radius_cjk: int = Field(5, ge=1, le=50)
 
     @validator("inpainting_method")
     def _method_allowed(cls, v):
@@ -198,6 +206,10 @@ class ProcessingConfig(BaseModel):
     temp_dir: str = Field("temp/")
     max_batch_size: int = Field(10, ge=1)
     timeout_seconds: int = Field(300, ge=1)
+    # Allow tests/dev environments to continue when optional heavy
+    # dependencies are missing. Set to False in production to fail-fast on
+    # missing critical components.
+    allow_missing_optional_dependencies: bool = Field(False)
 
     @validator("temp_dir")
     def _normalize_temp_dir(cls, v: str) -> str:
@@ -248,6 +260,11 @@ class AppConfig(BaseSettings):
     mask: MaskingConfig = Field(default_factory=MaskingConfig)
     processing: ProcessingConfig = Field(default_factory=ProcessingConfig)
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
+    # Presidio routing and activation (centralized)
+    presidio_canary_percentage: int = Field(
+        0, ge=0, le=100, description="Percent of traffic routed to Presidio pipeline"
+    )
+    use_presidio: bool = Field(False, description="Global toggle to enable Presidio for PHI detection")
 
     class Config:
         env_file = ".env"
@@ -269,6 +286,22 @@ class AppConfig(BaseSettings):
         patterns: Dict[str, str] = {f"builtin_{i}": p for i, p in enumerate(DEFAULT_PHI_REGEXES)}
         patterns.update(self.phi.custom_phi_patterns or {})
         return patterns
+
+    @validator("presidio_canary_percentage")
+    def _canary_in_range(cls, v):
+        if v is None:
+            return 0
+        if not (0 <= int(v) <= 100):
+            raise ValueError("presidio_canary_percentage must be between 0 and 100")
+        return int(v)
+
+    @validator("use_presidio")
+    def _coherent_use_presidio(cls, v, values):
+        # If a canary percentage is set but use_presidio is False, that's likely a config error.
+        pct = values.get("presidio_canary_percentage", 0)
+        if pct and not v:
+            raise ValueError("presidio_canary_percentage > 0 requires use_presidio=True to enable Presidio routing")
+        return v
 
     def validate_clinical_environment(self) -> bool:
         """Run clinical and compliance validations.

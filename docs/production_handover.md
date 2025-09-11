@@ -8,7 +8,7 @@ This document is a concise handover for operations teams responsible for running
 
 ### Key Configuration Files
 - `config.yaml` (repo root): primary runtime configuration. Critical keys:
-  - `presidio_canary_percentage` (0-100): per-image probability Presidio analyzer is used instead of legacy detectors. Useful for canary rollouts.
+  - `presidio_canary_percentage` (0-100): per-image probability Presidio analyzer is used instead of legacy detectors. Configure this in the central `AppConfig` (for example via `SETTINGS.presidio_canary_percentage` or environment variables) rather than ad-hoc `config.yaml` copies.
   - `shadow_mode_enabled` (bool): when true and Presidio is executed, Presidio's output is logged to `debug_output/shadow_audit/` but legacy output remains authoritative.
   - `mask_type`: controls masking style (`black_bar`, `blur`, `inpaint`).
   - `logging.level` and `debug_output` paths.
@@ -50,7 +50,8 @@ On-call runbook (summary):
    - Consider scaling horizontally (start additional worker instances) or throttling input.
 4. If alert is `High Error Rate`:
    - Inspect error messages in `debug_output/pdf_audit/*.jsonl`.
-   - If it is an external library (Presidio, OCR) failure, roll back the last deployment and notify engineering.
+  - If it is an external library (Presidio, OCR) failure, roll back the last deployment and notify engineering.
+  - Note: Presidio activation and canary percentage are now centralized in `AppConfig`. Search-and-replace or direct edits to `config.yaml` for presidio flags are deprecated.
 5. If false-positive or false-negative spikes are detected:
    - Review `debug_output/shadow_audit/` to compare legacy and presidio outputs.
    - Run `scripts/analyze_feedback.py` on reviewer CSVs to prioritize rule adjustments.

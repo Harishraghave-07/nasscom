@@ -1,3 +1,0 @@
-Patient name: John Doe
-DOB: 01/01/1980
-SSN: 123-45-6789

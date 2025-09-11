@@ -1,0 +1,321 @@
+[
+  {
+    "index": 0,
+    "text": "Highlighted PHI Details for Medical Record - Emily R. Dawson",
+    "bbox": [
+      33,
+      36,
+      446,
+      52
+    ],
+    "file": "region_000.png"
+  },
+  {
+    "index": 1,
+    "text": "Patient Information",
+    "bbox": [
+      30,
+      78,
+      143,
+      91
+    ],
+    "file": "region_001.png"
+  },
+  {
+    "index": 2,
+    "text": "Name: Emily R. Dawson",
+    "bbox": [
+      30,
+      103,
+      152,
+      115
+    ],
+    "file": "region_002.png"
+  },
+  {
+    "index": 3,
+    "text": "DOB: March 12, 1975",
+    "bbox": [
+      30,
+      126,
+      139,
+      138
+    ],
+    "file": "region_003.png"
+  },
+  {
+    "index": 4,
+    "text": "Gender: Female",
+    "bbox": [
+      30,
+      148,
+      113,
+      161
+    ],
+    "file": "region_004.png"
+  },
+  {
+    "index": 5,
+    "text": "Ethnicity: Caucasian",
+    "bbox": [
+      30,
+      171,
+      133,
+      183
+    ],
+    "file": "region_005.png"
+  },
+  {
+    "index": 6,
+    "text": "Address: 1284 Pine Ridge Drive, Aurora, CO 80014",
+    "bbox": [
+      30,
+      194,
+      285,
+      206
+    ],
+    "file": "region_006.png"
+  },
+  {
+    "index": 7,
+    "text": "Phone: (303) 555-7294",
+    "bbox": [
+      30,
+      216,
+      146,
+      229
+    ],
+    "file": "region_007.png"
+  },
+  {
+    "index": 8,
+    "text": "Email: emily.dawson75@example.com",
+    "bbox": [
+      30,
+      239,
+      222,
+      251
+    ],
+    "file": "region_008.png"
+  },
+  {
+    "index": 9,
+    "text": "SSN: 527-84-1937",
+    "bbox": [
+      30,
+      262,
+      124,
+      274
+    ],
+    "file": "region_009.png"
+  },
+  {
+    "index": 10,
+    "text": "Insurance Information",
+    "bbox": [
+      30,
+      293,
+      160,
+      307
+    ],
+    "file": "region_010.png"
+  },
+  {
+    "index": 11,
+    "text": "Insurance Provider: Blue Cross Blue Shield of Illinois (BCBSIL)",
+    "bbox": [
+      30,
+      319,
+      340,
+      331
+    ],
+    "file": "region_011.png"
+  },
+  {
+    "index": 12,
+    "text": "Plan Type: Blue Choice Preferred PPO",
+    "bbox": [
+      30,
+      341,
+      223,
+      354
+    ],
+    "file": "region_012.png"
+  },
+  {
+    "index": 13,
+    "text": "Member ID: ILX983472516",
+    "bbox": [
+      30,
+      364,
+      165,
+      376
+    ],
+    "file": "region_013.png"
+  },
+  {
+    "index": 14,
+    "text": "Group Number: 350712",
+    "bbox": [
+      30,
+      387,
+      149,
+      399
+    ],
+    "file": "region_014.png"
+  },
+  {
+    "index": 15,
+    "text": "Policy Effective Date: 01/01/2023",
+    "bbox": [
+      30,
+      409,
+      195,
+      422
+    ],
+    "file": "region_015.png"
+  },
+  {
+    "index": 16,
+    "text": "Payer ID: 03629",
+    "bbox": [
+      30,
+      432,
+      113,
+      445
+    ],
+    "file": "region_016.png"
+  },
+  {
+    "index": 17,
+    "text": "Medical Details",
+    "bbox": [
+      30,
+      464,
+      120,
+      477
+    ],
+    "file": "region_017.png"
+  },
+  {
+    "index": 18,
+    "text": "Primary Diagnosis: Stage II Invasive Ductal Carcinoma (Left Breast)",
+    "bbox": [
+      30,
+      489,
+      364,
+      501
+    ],
+    "file": "region_018.png"
+  },
+  {
+    "index": 19,
+    "text": "ICD-10 Code: C50.912",
+    "bbox": [
+      30,
+      512,
+      145,
+      524
+    ],
+    "file": "region_019.png"
+  },
+  {
+    "index": 20,
+    "text": "Date of Diagnosis: May 22, 2025",
+    "bbox": [
+      30,
+      534,
+      193,
+      547
+    ],
+    "file": "region_020.png"
+  },
+  {
+    "index": 21,
+    "text": "Oncologist: Dr. Marissa Greene, MD (NPI: 1789932041)",
+    "bbox": [
+      30,
+      557,
+      306,
+      569
+    ],
+    "file": "region_021.png"
+  },
+  {
+    "index": 22,
+    "text": "Hospital/Facility: University of Colorado Cancer Center",
+    "bbox": [
+      30,
+      580,
+      299,
+      592
+    ],
+    "file": "region_022.png"
+  },
+  {
+    "index": 23,
+    "text": "Medical History",
+    "bbox": [
+      30,
+      611,
+      122,
+      625
+    ],
+    "file": "region_023.png"
+  },
+  {
+    "index": 24,
+    "text": "- Hypertension",
+    "bbox": [
+      31,
+      637,
+      106,
+      649
+    ],
+    "file": "region_024.png"
+  },
+  {
+    "index": 25,
+    "text": "- Type II Diabetes",
+    "bbox": [
+      31,
+      659,
+      120,
+      672
+    ],
+    "file": "region_025.png"
+  },
+  {
+    "index": 26,
+    "text": "- Family History of Breast Cancer (mother)",
+    "bbox": [
+      31,
+      682,
+      241,
+      695
+    ],
+    "file": "region_026.png"
+  },
+  {
+    "index": 27,
+    "text": "Current Medications",
+    "bbox": [
+      30,
+      713,
+      149,
+      727
+    ],
+    "file": "region_027.png"
+  },
+  {
+    "index": 28,
+    "text": "- Metformin 500mg BID",
+    "bbox": [
+      31,
+      739,
+      148,
+      751
+    ],
+    "file": "region_028.png"
+  }
+]

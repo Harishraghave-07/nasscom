@@ -18,7 +18,14 @@ from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
 from src.utils.pdf_redactor import PDFRedactor
+from src.core.config import SETTINGS
 import cv2
+
+# lazy import for PyMuPDF (fitz)
+try:
+    import fitz
+except Exception:
+    fitz = None
 
 LOGGER = logging.getLogger("PDFProcessor")
 logging.basicConfig(level=logging.INFO)
@@ -34,9 +41,14 @@ class PDFProcessor:
         self.redactor = PDFRedactor(self.logger)
         # Attempt to load PHIClassifier if available in project
         try:
-            from src.phi.phi_classifier import PHIClassifier
+            # prefer the centralized PHI classifier implementation
+            from src.phi_detection.phi_classifier import PHIClassifier
 
-            self.phi_clf = PHIClassifier()
+            # pass top-level config when available so classifier uses centralized flags
+            try:
+                self.phi_clf = PHIClassifier(self.config)
+            except Exception:
+                self.phi_clf = PHIClassifier(SETTINGS.phi)
         except Exception:
             # Fallback simple regex-based PHI detector
             self.phi_clf = None

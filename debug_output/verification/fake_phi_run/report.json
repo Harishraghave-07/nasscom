@@ -1,0 +1,147 @@
+{
+  "input_pdf": "/Users/harishraghave/Downloads/nasscom/fake_phi_document.pdf",
+  "reports": [
+    {
+      "image_id": "page_001",
+      "stages": {
+        "preprocess": {
+          "name": "preprocess",
+          "duration_s": 0.01424991699968814,
+          "result": {
+            "orig_shape": [
+              1684,
+              1191
+            ],
+            "processed_shape": [
+              1684,
+              1684,
+              3
+            ],
+            "anonymized_text": null
+          },
+          "error": null
+        },
+        "text_detection": {
+          "name": "text_detection",
+          "duration_s": 6.433806416000152,
+          "result": {
+            "detected": 1,
+            "accepted": 1,
+            "rejected": 0
+          },
+          "error": null
+        },
+        "phi_classification": {
+          "name": "phi_classification",
+          "duration_s": 0.00012679199971898925,
+          "result": {
+            "phi_count": 0,
+            "used_presidio": false,
+            "shadow_mode": false
+          },
+          "error": null
+        },
+        "masking": {
+          "name": "masking",
+          "duration_s": 0.3779625839997607,
+          "result": {
+            "merged": false,
+            "method": "telea",
+            "mask_coverage": 0.0,
+            "quality": {
+              "psnr": 43.97412109375,
+              "ssim": 0.999624026930944,
+              "edge_preservation": 1.0,
+              "texture_consistency": 0.9998727440834045,
+              "notes": []
+            }
+          },
+          "error": null
+        }
+      },
+      "quality": {
+        "total_time_s": 6.9350322499994945
+      },
+      "metrics": {
+        "processed": 2,
+        "errors": 0,
+        "stages": {}
+      },
+      "timestamp": 1757593116.610218,
+      "phi_regions": [],
+      "input": "/var/folders/_5/yxm6dd5s3pjbmxmp6g3x1xgc0000gn/T/verif_pdf_g9nv4y5s/page_001.png",
+      "masked_output": "debug_output/verification/fake_phi_run/page_001_masked.png"
+    },
+    {
+      "image_id": "page_002",
+      "stages": {
+        "preprocess": {
+          "name": "preprocess",
+          "duration_s": 0.0067705830006161705,
+          "result": {
+            "orig_shape": [
+              1684,
+              1191
+            ],
+            "processed_shape": [
+              1684,
+              1684,
+              3
+            ],
+            "anonymized_text": null
+          },
+          "error": null
+        },
+        "text_detection": {
+          "name": "text_detection",
+          "duration_s": 5.6005671249986335,
+          "result": {
+            "detected": 1,
+            "accepted": 1,
+            "rejected": 0
+          },
+          "error": null
+        },
+        "phi_classification": {
+          "name": "phi_classification",
+          "duration_s": 0.00011920900033146609,
+          "result": {
+            "phi_count": 0,
+            "used_presidio": false,
+            "shadow_mode": false
+          },
+          "error": null
+        },
+        "masking": {
+          "name": "masking",
+          "duration_s": 0.33406025000113004,
+          "result": {
+            "merged": false,
+            "method": "telea",
+            "mask_coverage": 0.0,
+            "quality": {
+              "psnr": 49.57737731933594,
+              "ssim": 0.9998985633746443,
+              "edge_preservation": 1.0,
+              "texture_consistency": 0.9999855756759644,
+              "notes": []
+            }
+          },
+          "error": null
+        }
+      },
+      "quality": {
+        "total_time_s": 5.96195116600029
+      },
+      "metrics": {
+        "processed": 2,
+        "errors": 0,
+        "stages": {}
+      },
+      "timestamp": 1757593122.5744152,
+      "phi_regions": [],
+      "input": "/var/folders/_5/yxm6dd5s3pjbmxmp6g3x1xgc0000gn/T/verif_pdf_g9nv4y5s/page_002.png",
+      "masked_output": "debug_output/verification/fake_phi_run/page_002_masked.png"
+    }
+  ]
+}

@@ -18,7 +18,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
-from src.core.config import PHIDetectionConfig, SETTINGS
+from src.core.config import PHIDetectionConfig, AppConfig, SETTINGS
 
 logger = logging.getLogger(__name__)
 
@@ -78,8 +78,15 @@ class PHIClassifier:
         "other_unique_identifiers",
     ]
 
-    def __init__(self, config: PHIDetectionConfig):
-        self.config = config
+    def __init__(self, config: PHIDetectionConfig | AppConfig):
+        # Accept either a PHIDetectionConfig (legacy) or AppConfig (preferred).
+        if isinstance(config, AppConfig):
+            self.app_config: AppConfig = config
+            self.config: PHIDetectionConfig = config.phi
+        else:
+            # legacy branch: try to use global SETTINGS for AppConfig values
+            self.app_config = SETTINGS
+            self.config = config
         self._spacy_nlp = None
         self._spacy_available = False
         self._load_spacy_model()
@@ -175,8 +182,17 @@ class PHIClassifier:
 
         start_time = time.time()
 
-        # determine feature flags (backwards-compatible defaults)
-        use_presidio = getattr(self.config, "use_presidio", False)
+        # determine feature flags (prefer centralized AppConfig)
+        use_presidio = bool(getattr(self.app_config, "use_presidio", False))
+        # if presidio globally disabled, ensure false
+        try:
+            presidio_pct = int(getattr(self.app_config, "presidio_canary_percentage", 0) or 0)
+        except Exception:
+            presidio_pct = 0
+        # If canary is zero, do not run presidio
+        if not use_presidio or presidio_pct <= 0:
+            use_presidio = False
+
         use_spacy_fallback = getattr(self.config, "use_spacy_fallback", None)
         if use_spacy_fallback is None:
             # maintain compatibility with existing flag name

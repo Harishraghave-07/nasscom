@@ -77,15 +77,19 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # Import your pipeline
 from src.core.pipeline import ClinicalImageMaskingPipeline
+from src.core.config import SETTINGS
 
-pipeline = ClinicalImageMaskingPipeline(config_path="config/presidio.yaml")
+# Use the centralized application settings (AppConfig). Modify
+# `SETTINGS.use_presidio` or `SETTINGS.presidio_canary_percentage` via
+# environment variables or programmatic instantiation for routing.
+pipeline = ClinicalImageMaskingPipeline(SETTINGS)
 result = pipeline.process_file(str(INPUT), output_dir=str(OUTPUT_DIR))
 log.info("Pipeline run result: %s", result)
 print("Masked file location:", result.get("masked_pdf"))
 ```
 
 Action details:
-- Ensure `config/presidio.yaml` has `use_presidio: true` or set `presidio_canary_percentage: 100` for a deterministic test.
+- Ensure the centralized application config enables Presidio: set `use_presidio: true` or set `presidio_canary_percentage: 100` in `AppConfig` (for example via `SETTINGS.use_presidio` or `SETTINGS.presidio_canary_percentage`) or the equivalent environment variables. Editing the legacy `config/presidio.yaml` is deprecated; use `config/examples/presidio.example.yaml` as a reference only.
 - Optionally enable `shadow_mode_enabled: true` to keep legacy outputs and compare.
 - Run the script and keep the console logs.
 
@@ -195,7 +199,7 @@ Expected Outcome (example):
 ## Troubleshooting & Common Failure Modes
 
 - No detections found:
-  - Confirm `use_presidio: true` or set `presidio_canary_percentage: 100` in `config/presidio.yaml`.
+  - Confirm `use_presidio: true` or set `presidio_canary_percentage: 100` in your application `AppConfig` (or reference `config/examples/presidio.example.yaml` for legacy fields).
   - Ensure spaCy model(s) and Presidio packages are installed and the `presidio` services are importable.
 
 - Presidio instantiation errors:

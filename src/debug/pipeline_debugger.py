@@ -295,7 +295,8 @@ class PipelineDebugger:
             try:
                 from src.phi_detection.phi_classifier import PHIClassifier
 
-                phi = PHIClassifier(self.config.phi)
+                # Prefer passing top-level AppConfig so PHIClassifier uses centralized flags
+                phi = PHIClassifier(self.config)
             except Exception:
                 phi = None
 

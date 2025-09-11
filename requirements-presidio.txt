@@ -1,0 +1,9 @@
+# Heavy / optional dependencies (presidio, EasyOCR, torch, spacy models)
+easyocr==1.7.2
+torch==2.8.0
+torchvision==0.23.0
+presidio_analyzer==2.2.360
+presidio_anonymizer==2.2.360
+spacy==3.8.7
+en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl#sha256=1932429db727d4bff3deed6b34cfc05df17794f4a52eeb26cf8928f7c1a0fb85
+en_core_web_lg @ https://github.com/explosion/spacy-models/releases/download/en_core_web_lg-3.8.0/en_core_web_lg-3.8.0-py3-none-any.whl#sha256=293e9547a655b25499198ab15a525b05b9407a75f10255e405e8c3854329ab63

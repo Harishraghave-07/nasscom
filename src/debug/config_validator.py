@@ -24,15 +24,9 @@ try:
 except Exception:
     cv2 = None
 
-try:
-    import easyocr
-except Exception:
-    easyocr = None
-
-try:
-    import spacy
-except Exception:
-    spacy = None
+# Heavy dependencies (EasyOCR, spaCy) are imported lazily inside methods that
+# use them. This keeps module import fast and reliable in test/CI where these
+# packages may not be installed.
 
 LOGGER = logging.getLogger("ConfigValidator")
 logging.basicConfig(level=logging.INFO)
@@ -65,12 +59,10 @@ class ConfigValidator:
 
     def validate_dependencies(self) -> Dict[str, Any]:
         deps: Dict[str, Any] = {}
-        # EasyOCR
+        # EasyOCR (lazy import and best-effort test)
         try:
-            if easyocr is None:
-                raise ImportError("easyocr not available")
-            reader = easyocr.Reader(["en"], gpu=False, verbose=False)
-            # minimal detection test
+            import easyocr as _easyocr  # type: ignore
+            reader = _easyocr.Reader(["en"], gpu=False, verbose=False)
             test_image = np.ones((100, 200, 3), dtype=np.uint8) * 255
             if cv2 is not None:
                 cv2.putText(test_image, "TEST", (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
@@ -92,11 +84,10 @@ class ConfigValidator:
         except Exception as e:
             deps["opencv"] = {"status": "FAILED", "error": str(e)}
 
-        # spaCy
+        # spaCy (lazy import)
         try:
-            if spacy is None:
-                raise ImportError("spacy not available")
-            nlp = spacy.load("en_core_web_sm")
+            import spacy as _spacy  # type: ignore
+            nlp = _spacy.load("en_core_web_sm")
             doc = nlp("John Doe was born on 01/15/1980")
             ents = [(ent.text, ent.label_) for ent in doc.ents]
             deps["spacy"] = {"status": "OK", "model_loaded": True, "sample_entities": ents}
@@ -150,7 +141,7 @@ class ConfigValidator:
         res: Dict[str, Any] = {}
         # spaCy model
         try:
-            import spacy as _sp
+            import spacy as _sp  # type: ignore
             try:
                 _sp.load("en_core_web_sm")
                 res["spacy_en_core_web_sm"] = {"installed": True}
@@ -176,12 +167,16 @@ class ConfigValidator:
                 return res
 
             detections = []
-            if easyocr is not None:
+            try:
+                import easyocr as _easyocr  # type: ignore
                 try:
-                    rdr = easyocr.Reader(["en"], gpu=False, verbose=False)
+                    rdr = _easyocr.Reader(["en"], gpu=False, verbose=False)
                     detections = rdr.readtext(img)
                 except Exception as e:
                     res["ocr_error"] = str(e)
+            except Exception:
+                # easyocr not available; report zero detections
+                detections = []
 
             res["detections_count"] = len(detections)
             p = self.reports_dir / "sample_processing.json"
@@ -211,12 +206,16 @@ class ConfigValidator:
 
         # Attempt to download spaCy model if missing
         try:
-            if spacy is not None:
+            try:
+                import spacy as _sp  # type: ignore
                 try:
-                    spacy.load("en_core_web_sm")
+                    _sp.load("en_core_web_sm")
                 except Exception:
                     subprocess.run([sys.executable, "-m", "spacy", "download", "en_core_web_sm"], check=False)
                     fixes_applied.append("Attempted to download spaCy en_core_web_sm")
+            except Exception:
+                # spaCy not installed; nothing to do
+                pass
         except Exception:
             pass
 

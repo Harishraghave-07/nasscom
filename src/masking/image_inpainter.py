@@ -94,21 +94,57 @@ class ImageInpainter:
     def create_mask_from_regions(self, image_shape: Tuple[int, int], phi_regions: List[Dict]) -> np.ndarray:
         h, w = image_shape[:2]
         mask = np.zeros((h, w), dtype=np.uint8)
-        try:
-            for r in phi_regions:
-                bbox = r.get("bbox")
-                if not bbox or len(bbox) != 4:
-                    continue
-                x1, y1, x2, y2 = map(int, bbox)
-                # apply expansion
-                exp = int(r.get("mask_expansion", self.config.mask_expansion_pixels))
-                x1 = max(0, x1 - exp)
-                y1 = max(0, y1 - exp)
-                x2 = min(w, x2 + exp)
-                y2 = min(h, y2 + exp)
-                mask[y1:y2, x1:x2] = 255
+        for r in phi_regions:
+            # prefer masking at the word level when available to avoid over-masking labels
+            word_boxes = r.get("word_boxes") or []
+            if word_boxes:
+                for wb in word_boxes:
+                    bbox = wb.get("bbox")
+                    if not bbox or len(bbox) != 4:
+                        continue
+                    try:
+                        x1, y1, x2, y2 = map(int, bbox)
+                    except Exception:
+                        continue
+                    try:
+                        exp = int(wb.get("mask_expansion", r.get("mask_expansion", self.config.mask_expansion_pixels)))
+                    except Exception:
+                        exp = int(self.config.mask_expansion_pixels)
+                    x1 = max(0, x1 - exp)
+                    y1 = max(0, y1 - exp)
+                    x2 = min(w, x2 + exp)
+                    y2 = min(h, y2 + exp)
+                    if x1 >= x2 or y1 >= y2:
+                        continue
+                    mask[y1:y2, x1:x2] = 255
+                continue
 
-            # smooth edges
+            # fallback to region bbox
+            bbox = r.get("bbox")
+            if not bbox or len(bbox) != 4:
+                continue
+            try:
+                x1, y1, x2, y2 = map(int, bbox)
+            except Exception as exc:
+                logger.error("Invalid bbox for region %s: %s", r, exc)
+                raise ValueError(f"Invalid bbox in region: {r}") from exc
+            # apply expansion
+            try:
+                exp = int(r.get("mask_expansion", self.config.mask_expansion_pixels))
+            except Exception:
+                exp = int(self.config.mask_expansion_pixels)
+            x1 = max(0, x1 - exp)
+            y1 = max(0, y1 - exp)
+            x2 = min(w, x2 + exp)
+            y2 = min(h, y2 + exp)
+            # validate coordinates
+            if x1 >= x2 or y1 >= y2:
+                logger.error("Computed invalid expanded bbox for region %s -> (%d,%d,%d,%d)", r, x1, y1, x2, y2)
+                raise ValueError(f"Invalid expanded bbox for region: {r}")
+            mask[y1:y2, x1:x2] = 255
+
+        # smooth edges
+        try:
             if cv2 is not None:
                 k = max(3, int(min(h, w) * 0.003))
                 if k % 2 == 0:
@@ -116,22 +152,95 @@ class ImageInpainter:
                 mask = cv2.GaussianBlur(mask, (k, k), 0)
                 # threshold to binary
                 _, mask = cv2.threshold(mask, 127, 255, cv2.THRESH_BINARY)
+        except (cv2.error, ValueError) as exc:
+            logger.exception("Mask smoothing step failed with cv2 error: %s", exc)
+            # surface as ValueError for callers to handle deterministically
+            raise ValueError("Mask smoothing failed") from exc
+        except Exception as exc:
+            # unexpected error: log and re-raise so callers see failure
+            logger.exception("Unexpected error during mask smoothing: %s", exc)
+            raise
 
-            # validate coverage
-            coverage = float(mask.sum()) / (255.0 * h * w)
-            if coverage <= 0:
-                logger.warning("Generated mask has zero coverage")
+        # validate coverage
+        coverage = float(mask.sum()) / (255.0 * h * w)
+        if coverage <= 0:
+            logger.warning("Generated mask has zero coverage")
+        try:
             self.audit_logger.info(json.dumps({"event": "create_mask", "coverage": coverage}))
-            return mask
-        except MemoryError:
-            logger.exception("MemoryError during mask creation")
-            raise
         except Exception:
-            logger.exception("Failed to create mask from regions")
-            raise
+            logger.debug("Failed to audit mask creation")
+        return mask
+
+    def draw_debug_overlays(self, image: np.ndarray, word_boxes: List[Dict], phi_bboxes: List[Dict], applied_mask: Optional[np.ndarray] = None) -> np.ndarray:
+        """Return a copy of image with overlays for debug visualization.
+
+        - word_boxes: list of word box dicts ({'bbox':[x1,y1,x2,y2], 'text':...}) drawn in blue
+        - phi_bboxes: list of detection dicts (with 'bbox') drawn in red
+        - applied_mask: binary mask drawn as semi-transparent green
+        """
+        out = image.copy()
+        try:
+            import cv2 as _cv2
+
+            # draw word boxes (blue)
+            for wb in word_boxes or []:
+                try:
+                    bx = list(map(int, wb.get("bbox", [])))
+                    if len(bx) != 4:
+                        continue
+                    _cv2.rectangle(out, (bx[0], bx[1]), (bx[2], bx[3]), (255, 0, 0), 1)
+                except Exception:
+                    continue
+
+            # draw phi bboxes (red)
+            for p in phi_bboxes or []:
+                try:
+                    bx = list(map(int, p.get("bbox", [])))
+                    if len(bx) != 4:
+                        continue
+                    _cv2.rectangle(out, (bx[0], bx[1]), (bx[2], bx[3]), (0, 0, 255), 2)
+                except Exception:
+                    continue
+
+            # overlay mask (green) with alpha
+            if applied_mask is not None:
+                try:
+                    colored = _cv2.cvtColor(out, _cv2.COLOR_RGB2RGBA) if out.shape[2] == 3 else _cv2.cvtColor(out, _cv2.COLOR_BGR2BGRA)
+                    alpha = 0.35
+                    mask_rgb = _cv2.merge([_cv2.threshold(applied_mask, 127, 255, _cv2.THRESH_BINARY)[1]] * 3 + [(_cv2.threshold(applied_mask, 127, 255, _cv2.THRESH_BINARY)[1] * int(255 * alpha)).astype('uint8')])
+                    # blend where mask present
+                    mask_bool = applied_mask > 127
+                    colored[mask_bool] = (_cv2.addWeighted(colored, 1.0, mask_rgb, alpha, 0))[mask_bool]
+                    out = _cv2.cvtColor(colored, _cv2.COLOR_RGBA2RGB)
+                except Exception:
+                    logger.exception("Failed to overlay mask visualization")
+        except Exception:
+            # cv2 not available or overlay failed; return original copy
+            logger.debug("Debug overlay generation skipped (cv2 missing or error)")
+        return out
+
+    # ---------------- language heuristics ----------------
+    def detect_language_group(self, phi_regions: List[Dict]) -> str:
+        """Coarse language group detection.
+
+        This deployment supports only English. Forcing 'latin' group so masking
+        heuristics remain English-centric and avoid CJK-specific padding.
+        """
+        return "latin"
+
+    def get_language_heuristics(self, lang_group: str) -> Dict[str, int]:
+        """Return heuristic parameters for a coarse language group."""
+        heur = {
+            "padding": int(getattr(self.config, "lang_padding_default", getattr(self.config, "surgical_padding_pixels", 2))),
+            "inpainting_radius": int(getattr(self.config, "inpainting_radius", 3)),
+        }
+        if lang_group == "cjk":
+            heur["padding"] = int(getattr(self.config, "lang_padding_cjk", heur["padding"]))
+            heur["inpainting_radius"] = int(getattr(self.config, "inpainting_radius_cjk", heur["inpainting_radius"]))
+        return heur
 
     # ---------------- inpainting ----------------
-    def apply_inpainting(self, image: np.ndarray, mask: np.ndarray, method: str = "telea") -> np.ndarray:
+    def apply_inpainting(self, image: np.ndarray, mask: np.ndarray, method: str = "telea", radius: Optional[int] = None) -> np.ndarray:
         if cv2 is None:
             raise RuntimeError("OpenCV not available")
         if image is None or mask is None:
@@ -149,10 +258,13 @@ class ImageInpainter:
         else:
             mask8 = mask
 
-        # choose method
+        # choose method and radius (allow override)
+        if radius is None:
+            radius = max(1, int(getattr(self.config, "inpainting_radius", 3)))
+
         if method.lower() == "telea":
             flags = cv2.INPAINT_TELEA
-            radius = max(1, int(self.config.inpainting_radius))
+            radius = max(1, int(radius))
             inpainted = cv2.inpaint(img, mask8, radius, flags)
         elif method.lower() in ("ns", "navier-stokes", "navier_stokes"):
             flags = cv2.INPAINT_NS
@@ -160,7 +272,7 @@ class ImageInpainter:
             inpainted = cv2.inpaint(img, mask8, radius, flags)
         elif method.lower() == "hybrid":
             # hybrid: TELEA followed by a low-strength NS pass
-            r1 = max(1, int(self.config.inpainting_radius))
+            r1 = max(1, int(radius))
             tmp = cv2.inpaint(img, mask8, r1, cv2.INPAINT_TELEA)
             inpainted = cv2.inpaint(tmp, mask8, max(1, r1 // 2), cv2.INPAINT_NS)
         else:
@@ -277,18 +389,19 @@ class ImageInpainter:
 
     def _process_single_image(self, image: np.ndarray, detections: List[Dict]) -> Tuple[np.ndarray, Dict]:
         start = time.time()
+        # allow specific exceptions to propagate; callers may choose to fall
+        # back if desired. Log detailed context on failure to aid debugging.
+        mask = self.create_mask_from_regions(image.shape, detections)
+        method = self.smart_inpainting_selection(image, mask)
+        inpainted = self.apply_inpainting(image, mask, method=method)
+        enhanced = self.enhance_inpainted_regions(image, inpainted, mask)
+        report = self.validate_masking_quality(image, enhanced, mask)
+        elapsed = time.time() - start
         try:
-            mask = self.create_mask_from_regions(image.shape, detections)
-            method = self.smart_inpainting_selection(image, mask)
-            inpainted = self.apply_inpainting(image, mask, method=method)
-            enhanced = self.enhance_inpainted_regions(image, inpainted, mask)
-            report = self.validate_masking_quality(image, enhanced, mask)
-            elapsed = time.time() - start
             self.audit_logger.info(json.dumps({"event": "process_image", "time_s": elapsed, "method": method}))
-            return enhanced, report
         except Exception:
-            logger.exception("_process_single_image failed")
-            return image, {"error": "failed"}
+            logger.debug("Failed to write audit event for process_image")
+        return enhanced, report
 
     # ---------------- advanced techniques ----------------
     def adaptive_mask_expansion(self, regions: List[Dict], image: np.ndarray) -> List[Dict]:
@@ -373,281 +486,88 @@ class ImageInpainter:
             logger.exception("verify_phi_removal_completeness failed")
             return {"error": True}
 
-    def apply_surgical_masking(self, image: np.ndarray, phi_regions: List[Dict], padding: Optional[int] = None) -> np.ndarray:
+    # ---------------- surgical masking ----------------
+    def apply_surgical_masking(self, image: np.ndarray, phi_regions: List[Dict], padding: Optional[int] = None, lang_group: Optional[str] = None, merge_entity: bool = True) -> np.ndarray:
         """Apply precise, small black rectangles only over provided PHI regions.
 
         - padding: minimal pixel expansion around each bbox (defaults to config or 2px)
+        - merge_entity: if True, merge all word-level boxes of a region into a single bbox
+          before masking; otherwise mask each word box separately.
         Returns the masked image.
         """
         if image is None:
             raise ValueError("image must be provided")
-
-        pad = int(padding if padding is not None else getattr(self.config, "surgical_padding_pixels", 2))
+        if lang_group is None:
+            lang_group = self.detect_language_group(phi_regions)
+        heur = self.get_language_heuristics(lang_group)
+        pad = int(padding if padding is not None else heur.get("padding", getattr(self.config, "surgical_padding_pixels", 2)))
         out = image.copy()
 
         for r in phi_regions:
-            bbox = r.get("bbox")
-            if not bbox or len(bbox) != 4:
-                continue
-            try:
-                x1, y1, x2, y2 = map(int, bbox)
-            except Exception:
-                continue
-
-            x1 = max(0, x1 - pad)
-            y1 = max(0, y1 - pad)
-            x2 = min(out.shape[1], x2 + pad)
-            y2 = min(out.shape[0], y2 + pad)
-
-            try:
-                if cv2 is not None:
-                    cv2.rectangle(out, (x1, y1), (x2, y2), (0, 0, 0), thickness=-1)
-                else:
+            word_boxes = r.get("word_boxes") or []
+            if word_boxes:
+                if merge_entity:
+                    xs1 = [int(wb["bbox"][0]) for wb in word_boxes if wb.get("bbox")]
+                    ys1 = [int(wb["bbox"][1]) for wb in word_boxes if wb.get("bbox")]
+                    xs2 = [int(wb["bbox"][2]) for wb in word_boxes if wb.get("bbox")]
+                    ys2 = [int(wb["bbox"][3]) for wb in word_boxes if wb.get("bbox")]
+                    if xs1 and ys1 and xs2 and ys2:
+                        x1, y1, x2, y2 = min(xs1), min(ys1), max(xs2), max(ys2)
+                        x1, y1 = max(0, x1 - pad), max(0, y1 - pad)
+                        x2, y2 = min(out.shape[1], x2 + pad), min(out.shape[0], y2 + pad)
+                        # mask merged entity precisely
+                        out[y1:y2, x1:x2] = 0
+                        try:
+                            self.audit_logger.info(json.dumps({"event": "surgical_mask_entity", "entity": r.get("entity_type"), "text": r.get("text"), "word_count": len(word_boxes)}))
+                        except Exception:
+                            pass
+                    continue
+                for wb in word_boxes:
+                    bbox = wb.get("bbox")
+                    if not bbox or len(bbox) != 4:
+                        continue
+                    x1, y1, x2, y2 = map(int, bbox)
+                    x1, y1 = max(0, x1 - pad), max(0, y1 - pad)
+                    x2, y2 = min(out.shape[1], x2 + pad), min(out.shape[0], y2 + pad)
+                    # mask individual word precisely
                     out[y1:y2, x1:x2] = 0
-            except Exception:
-                # best-effort continue
+                try:
+                    self.audit_logger.info(json.dumps({"event": "surgical_mask_words", "entity": r.get("entity_type"), "text": r.get("text"), "word_count": len(word_boxes)}))
+                except Exception:
+                    pass
                 continue
 
-            # audit log the surgical masking
-            try:
-                self.audit_logger.info(json.dumps({"event": "surgical_mask", "entity": r.get("entity_type"), "text": r.get("text"), "bbox": [x1, y1, x2, y2]}))
-            except Exception:
-                pass
+            # fallback to masking value part for labels
+            text = (r.get("text") or "").strip()
+            if ":" in text:
+                x1, y1, x2, y2 = map(int, r.get("bbox", [0,0,0,0]))
+                split_x = int(x1 + (x2 - x1) * 0.4)
+                sx1, sy1 = max(0, split_x - pad), max(0, y1 - pad)
+                sx2, sy2 = min(out.shape[1], x2 + pad), min(out.shape[0], y2 + pad)
+                # mask value part precisely
+                out[sy1:sy2, sx1:sx2] = 0
+                try:
+                    self.audit_logger.info(json.dumps({"event": "surgical_mask_value_only", "text": text, "bbox": [sx1, sy1, sx2, sy2]}))
+                except Exception:
+                    pass
+                continue
+
+            # final fallback whole region
+            bbox = r.get("bbox")
+            if bbox and len(bbox) == 4:
+                x1, y1, x2, y2 = map(int, bbox)
+                x1, y1 = max(0, x1 - pad), max(0, y1 - pad)
+                x2, y2 = min(out.shape[1], x2 + pad), min(out.shape[0], y2 + pad)
+                # mask full region precisely
+                out[y1:y2, x1:x2] = 0
+                try:
+                    self.audit_logger.info(json.dumps({"event": "surgical_mask", "entity": r.get("entity_type"), "text": r.get("text"), "bbox": [x1, y1, x2, y2]}))
+                except Exception:
+                    pass
 
         return out
 
-    def unified_masking_stage(
-        self,
-        image: np.ndarray,
-        phi_regions: List[Dict],
-        *,
-        style: Optional[str] = None,
-        merge_adjacent: bool = True,
-        padding: Optional[int] = None,
-        blend_alpha: float = 0.0,
-        inpaint_method: Optional[str] = None,
-        fallback_to_blackbox: bool = True,
-    ) -> Tuple[np.ndarray, Dict[str, Any]]:
-        """Unified masking stage.
-
-        Inputs:
-          - image: HxWxC numpy uint8 image
-          - phi_regions: list of detection dicts with at least 'bbox' and optional 'text'/'word_boxes'
-        Options (via args or configured MaskingConfig):
-          - style: override redaction style (inpaint|blackbox|blackbox_merge|surgical)
-          - merge_adjacent: attempt to merge nearby word-level boxes into phrase-level boxes
-          - padding: per-entity padding in pixels (overrides surgical_padding or mask_expansion)
-          - blend_alpha: if >0, blend masked region edges for visual softness (applies to blackbox)
-          - inpaint_method: override inpainting method ('telea'|'ns'|'hybrid')
-          - fallback_to_blackbox: if inpainting fails, fall back to deterministic black boxes
-
-        Returns (masked_image, metadata) where metadata includes method, coverage, quality and audit info.
-        """
-        meta: Dict[str, Any] = {"merged": False, "method": None, "mask_coverage": 0.0, "quality": {}}
-        if image is None:
-            raise ValueError("image must be provided to unified_masking_stage")
-
-        # normalize options
-        style = style or getattr(self.config, "redaction_style", "inpaint")
-        inpaint_method = inpaint_method or getattr(self.config, "inpainting_method", "telea")
-        pad = int(padding) if padding is not None else int(getattr(self.config, "surgical_padding_pixels", 2))
-
-        regs = list(phi_regions or [])
-
-        # Optional merging step (best-effort, non-fatal)
-        if merge_adjacent:
-            try:
-                # attempt to use OCR merge helper if available and if regions include word_boxes
-                from src.ocr.text_detector import merge_adjacent_regions
-
-                # Build candidate phrases from provided regions
-                candidate_phis = [r.get("text") or r.get("entity") or "" for r in regs]
-                # If underlying regions already contain word_boxes, flatten them; else skip
-                word_regions = []
-                for r in regs:
-                    wbs = r.get("word_boxes") or []
-                    if wbs:
-                        for w in wbs:
-                            word_regions.append({"text": w.get("text", ""), "bbox": w.get("bbox"), "confidence": w.get("confidence", 1.0)})
-
-                if word_regions and any(candidate_phis):
-                    merged = merge_adjacent_regions(word_regions, candidate_phis, fuzz_threshold=int(getattr(self.config, "fuzz_threshold", 80)))
-                    # convert merged back into region dicts
-                    if merged and len(merged) != len(word_regions):
-                        meta["merged"] = True
-                        # map merged regions back to simple phi_regions for masking
-                        regs = []
-                        for m in merged:
-                            regs.append({"text": m.get("text"), "bbox": m.get("bbox"), "confidence": m.get("confidence", 1.0)})
-            except Exception:
-                # non-fatal: continue without merging
-                logger.debug("merge_adjacent_regions unavailable or failed; continuing without merge")
-
-        # apply adaptive mask expansion if configured
-        try:
-            regs = self.adaptive_mask_expansion(regs, image)
-        except Exception:
-            logger.debug("adaptive_mask_expansion failed or not applicable")
-
-        # Core styles
-        try:
-            if style == "surgical":
-                out = self.apply_surgical_masking(image, regs, padding=pad)
-                meta["method"] = "surgical"
-                # surgical returns full image; compute a binary mask for quality checks
-                try:
-                    mask = self.create_mask_from_regions(image.shape, regs)
-                    meta["mask_coverage"] = float((mask > 0).sum()) / (image.shape[0] * image.shape[1])
-                except Exception:
-                    mask = None
-                meta["quality"] = self.validate_masking_quality(image, out, mask) if hasattr(self, "validate_masking_quality") else {}
-                return out, meta
-
-            if style in ("blackbox", "blackbox_merge"):
-                out = image.copy()
-                try:
-                    import cv2 as _cv2
-
-                    if style == "blackbox_merge":
-                        xs, ys = [], []
-                        for r in regs:
-                            try:
-                                x1, y1, x2, y2 = map(int, r.get("bbox", (0, 0, 0, 0)))
-                                xs.extend([x1, x2]); ys.extend([y1, y2])
-                            except Exception:
-                                continue
-                        if xs and ys:
-                            pad_bb = int(getattr(self.config, "blackbox_padding_pixels", 5))
-                            x1, x2 = max(0, min(xs) - pad_bb), min(out.shape[1], max(xs) + pad_bb)
-                            y1, y2 = max(0, min(ys) - pad_bb), min(out.shape[0], max(ys) + pad_bb)
-                            _cv2.rectangle(out, (x1, y1), (x2, y2), (0, 0, 0), thickness=-1)
-                    else:
-                        for r in regs:
-                            try:
-                                x1, y1, x2, y2 = map(int, r.get("bbox", (0, 0, 0, 0)))
-                                _cv2.rectangle(out, (x1, y1), (x2, y2), (0, 0, 0), thickness=-1)
-                            except Exception:
-                                continue
-                except Exception:
-                    # numpy fallback
-                    if style == "blackbox_merge":
-                        xs, ys = [], []
-                        for r in regs:
-                            try:
-                                x1, y1, x2, y2 = map(int, r.get("bbox", (0, 0, 0, 0)))
-                                xs.extend([x1, x2]); ys.extend([y1, y2])
-                            except Exception:
-                                continue
-                        if xs and ys:
-                            pad_bb = int(getattr(self.config, "blackbox_padding_pixels", 5))
-                            x1, x2 = max(0, min(xs) - pad_bb), min(out.shape[1], max(xs) + pad_bb)
-                            y1, y2 = max(0, min(ys) - pad_bb), min(out.shape[0], max(ys) + pad_bb)
-                            out[y1:y2, x1:x2] = 0
-                    else:
-                        for r in regs:
-                            try:
-                                x1, y1, x2, y2 = map(int, r.get("bbox", (0, 0, 0, 0)))
-                                out[y1:y2, x1:x2] = 0
-                            except Exception:
-                                continue
-
-                # compute mask for quality
-                try:
-                    mask = self.create_mask_from_regions(image.shape, regs)
-                    meta["mask_coverage"] = float((mask > 0).sum()) / (image.shape[0] * image.shape[1])
-                except Exception:
-                    mask = None
-                meta["method"] = style
-                meta["quality"] = self.validate_masking_quality(image, out, mask) if hasattr(self, "validate_masking_quality") else {}
-                return out, meta
-
-            # default: inpainting flow
-            mask = self.create_mask_from_regions(image.shape, regs)
-            meta["mask_coverage"] = float((mask > 0).sum()) / (image.shape[0] * image.shape[1])
-            method = inpaint_method or getattr(self.config, "inpainting_method", "telea")
-            try:
-                inpainted = self.apply_inpainting(image, mask, method=method)
-                enhanced = self.enhance_inpainted_regions(image, inpainted, mask) if hasattr(self, "enhance_inpainted_regions") else inpainted
-                meta["method"] = method
-                meta["quality"] = self.validate_masking_quality(image, enhanced, mask) if hasattr(self, "validate_masking_quality") else {}
-                return enhanced, meta
-            except Exception:
-                logger.exception("Inpainting failed in unified_masking_stage")
-                if fallback_to_blackbox:
-                    # fallback: draw black boxes deterministically
-                    out = image.copy()
-                    try:
-                        import cv2 as _cv2
-                        for r in regs:
-                            try:
-                                x1, y1, x2, y2 = map(int, r.get("bbox", (0, 0, 0, 0)))
-                                _cv2.rectangle(out, (x1, y1), (x2, y2), (0, 0, 0), thickness=-1)
-                            except Exception:
-                                continue
-                    except Exception:
-                        for r in regs:
-                            try:
-                                x1, y1, x2, y2 = map(int, r.get("bbox", (0, 0, 0, 0)))
-                                out[y1:y2, x1:x2] = 0
-                            except Exception:
-                                continue
-
-                    # mask for quality
-                    try:
-                        mask2 = self.create_mask_from_regions(image.shape, regs)
-                        meta["mask_coverage"] = float((mask2 > 0).sum()) / (image.shape[0] * image.shape[1])
-                    except Exception:
-                        mask2 = None
-                    meta["method"] = "inpaint_fallback_blackbox"
-                    meta["quality"] = self.validate_masking_quality(image, out, mask2) if hasattr(self, "validate_masking_quality") else {}
-                    return out, meta
-                raise
-        except Exception:
-            logger.exception("unified_masking_stage failed")
-            raise
-
-    # ---------------- specialized medical handling ----------------
-    def handle_dicom_overlays(self, image: np.ndarray, phi_regions: List[Dict]) -> Tuple[np.ndarray, List[Dict]]:
-        # If pydicom available and dataset passed, preserve overlays placeholder
-        if pydicom is None:
-            return image, phi_regions
-        # In a real implementation, parse DICOM tags and preserve overlays
-        return image, phi_regions
-
-    def optimize_for_ultrasound(self, image: np.ndarray, mask: np.ndarray) -> np.ndarray:
-        # speckle-aware smoothing: use median+bilateral
-        out = image.copy()
-        if cv2 is not None:
-            out = cv2.medianBlur(out, 3)
-            out = cv2.bilateralFilter(out, 5, 75, 75)
-        return out
-
-    def optimize_for_xray(self, image: np.ndarray, mask: np.ndarray) -> np.ndarray:
-        out = image.copy()
-        if cv2 is not None:
-            # preserve contrast: unsharp mask
-            blur = cv2.GaussianBlur(out, (0, 0), sigmaX=3)
-            out = cv2.addWeighted(out, 1.5, blur, -0.5, 0)
-        return out
-
-    # ---------------- performance helpers ----------------
-    def parallel_region_processing(self, image: np.ndarray, regions: List[Dict]) -> np.ndarray:
-        # process regions in parallel by applying local inpainting and merging
-        parts = []
-        with ThreadPoolExecutor(max_workers=4) as ex:
-            futures = [ex.submit(self._process_region, image, r) for r in regions]
-            for fut in as_completed(futures):
-                try:
-                    parts.append(fut.result())
-                except Exception:
-                    logger.exception("region processing failed")
-        # naive merge: return original for now
-        return image
-
-    def _process_region(self, image: np.ndarray, region: Dict) -> np.ndarray:
-        # small helper to process a single region (not used extensively here)
-        return image
-
+    # ---------------- caching ----------------
     def cache_inpainting_results(self, image_hash: str, mask_hash: str, result: np.ndarray) -> None:
         try:
             key = hashlib.sha256((image_hash + mask_hash).encode("utf-8")).hexdigest()
@@ -671,6 +591,37 @@ class ImageInpainter:
         h = hashlib.sha256()
         h.update(arr.tobytes())
         return h.hexdigest()
+
+    # add unified_masking_stage back so masking script works
+    def unified_masking_stage(
+        self,
+        image: np.ndarray,
+        phi_regions: List[Dict],
+        *,
+        style: Optional[str] = None,
+        merge_adjacent: bool = True,
+        padding: Optional[int] = None,
+        blend_alpha: float = 0.0,
+        inpaint_method: Optional[str] = None,
+        fallback_to_blackbox: bool = True,
+    ) -> Tuple[np.ndarray, Dict[str, Any]]:
+        """Unified masking stage supporting surgical and inpaint styles."""
+        # choose style
+        style = style or getattr(self.config, "redaction_style", "inpaint")
+        if style == "surgical":
+            masked = self.apply_surgical_masking(image, phi_regions, padding=padding)
+            meta = {"method": style}
+            return masked, meta
+        if style == "inpaint":
+            mask = self.create_mask_from_regions(image.shape, phi_regions)
+            method = inpaint_method or getattr(self.config, "inpainting_method", "telea")
+            inpainted = self.apply_inpainting(image, mask, method)
+            meta = {"method": style}
+            return inpainted, meta
+        # fallback: surgical blackbox
+        masked = self.apply_surgical_masking(image, phi_regions, padding=padding)
+        meta = {"method": "surgical"}
+        return masked, meta
 
 
 __all__ = ["ImageInpainter", "InpaintQualityReport"]

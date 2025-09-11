@@ -1,5 +1,11 @@
 ## Presidio & PHI detection configuration
 ##
+## NOTE: Presidio activation and canary routing flags are now centralized
+## in the application's `AppConfig` (see `src/core/config.py` - fields
+## `use_presidio` and `presidio_canary_percentage`). Editing this file to
+## control those flags is deprecated and will be removed in a future release.
+## This YAML remains for fine-grained thresholds and legacy compatibility.
+##
 ## Toggle which detection backends the pipeline should prefer. These are
 ## intentionally simple booleans so environment-specific overrides are easy.
 

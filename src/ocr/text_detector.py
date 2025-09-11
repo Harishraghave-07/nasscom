@@ -248,6 +248,107 @@ class TextDetector:
 
         return accepted, rejected
 
+    def merge_overlapping_regions(self, regions: List[Dict[str, Any]], overlap_thresh: float = 0.3) -> List[Dict[str, Any]]:
+        """Merge overlapping bounding boxes preserving the highest-confidence text.
+
+        This implementation builds an adjacency via intersection-over-minimum-area
+        (IoM) and merges any connected components of boxes where a pairwise
+        IoM >= overlap_thresh. The merged bbox is the union of member boxes and
+        the canonical text/confidence is taken from the highest-confidence
+        member. Returned dicts include an optional "merged_from" list.
+        """
+        if not regions:
+            return []
+
+        def area(b):
+            return max(0, (b[2] - b[0])) * max(0, (b[3] - b[1]))
+
+        def iom(boxA, boxB):
+            xA = max(boxA[0], boxB[0])
+            yA = max(boxA[1], boxB[1])
+            xB = min(boxA[2], boxB[2])
+            yB = min(boxA[3], boxB[3])
+            interW = max(0, xB - xA)
+            interH = max(0, yB - yA)
+            interArea = interW * interH
+            minArea = min(area(boxA), area(boxB))
+            if minArea <= 0:
+                return 0.0
+            return float(interArea) / float(minArea)
+
+        # normalize boxes and scores
+        boxes: List[Tuple[int, int, int, int]] = []
+        scores: List[float] = []
+        low_flags: List[bool] = []
+        for r in regions:
+            try:
+                b = tuple(int(x) for x in r.get("bbox", (0, 0, 0, 0)))
+            except Exception:
+                b = (0, 0, 0, 0)
+            boxes.append(b)
+            scores.append(float(r.get("confidence", 0.0)))
+            low_flags.append(bool(r.get("low_confidence", False)))
+
+        n = len(boxes)
+        parent = list(range(n))
+
+        def find(x: int) -> int:
+            while parent[x] != x:
+                parent[x] = parent[parent[x]]
+                x = parent[x]
+            return x
+
+        def union(a: int, b: int) -> None:
+            ra = find(a)
+            rb = find(b)
+            if ra == rb:
+                return
+            parent[rb] = ra
+
+        # pairwise union where IoM >= threshold
+        for i in range(n):
+            for j in range(i + 1, n):
+                try:
+                    if iom(boxes[i], boxes[j]) >= overlap_thresh:
+                        union(i, j)
+                except Exception:
+                    continue
+
+        # collect groups
+        groups: Dict[int, List[int]] = {}
+        for idx in range(n):
+            root = find(idx)
+            groups.setdefault(root, []).append(idx)
+
+        merged_results: List[Dict[str, Any]] = []
+        for grp in groups.values():
+            if not grp:
+                continue
+            if len(grp) == 1:
+                single = dict(regions[grp[0]])
+                try:
+                    single_bbox = tuple(int(x) for x in single.get("bbox", (0, 0, 0, 0)))
+                except Exception:
+                    single_bbox = tuple(single.get("bbox", (0, 0, 0, 0)))
+                single["bbox"] = single_bbox
+                merged_results.append(single)
+                continue
+            # choose highest-confidence member as canonical
+            best_idx = max(grp, key=lambda ii: scores[ii])
+            xs1 = [boxes[ii][0] for ii in grp]
+            ys1 = [boxes[ii][1] for ii in grp]
+            xs2 = [boxes[ii][2] for ii in grp]
+            ys2 = [boxes[ii][3] for ii in grp]
+            union_bbox = (min(xs1), min(ys1), max(xs2), max(ys2))
+            merged = dict(regions[best_idx])
+            merged["bbox"] = union_bbox
+            merged["merged_from"] = [regions[ii].get("bbox") for ii in grp]
+            # low_confidence flag: True if all members were low confidence
+            merged["low_confidence"] = all(low_flags[ii] for ii in grp)
+            merged_results.append(merged)
+
+        return merged_results
+
     # ------------------------- detection pipeline -------------------------
     def detect_text_regions(self, image: np.ndarray) -> List[Dict[str, Any]]:
         """Detect text regions using EasyOCR and return raw detections.
@@ -309,11 +410,26 @@ class TextDetector:
 
         # Merge overlapping detections (robust; fall back to raw regions on failure)
         try:
-            non_low = [r for r in regions if not r.get("low_confidence")]
-            merged = self.merge_overlapping_regions(non_low, overlap_thresh=0.5)
+            # Merge all regions first so grouping decisions consider adjacency
+            # across confidence bands. Later we will re-attach low-confidence
+            # regions as needed.
+            merged_all = self.merge_overlapping_regions(regions, overlap_thresh=0.5)
+            # preserve low_confidence markers (some implementations may
+            # have moved them into merged entries); ensure any original
+            # low_confidence entries are not silently dropped: if a merged
+            # entry contains only low_confidence members, keep its flag.
+            merged = merged_all
         except Exception:
-            logger.exception("merge_overlapping_regions failed; falling back to raw regions")
-            merged = [r for r in regions if not r.get("low_confidence")]
+            logger.exception("merge_overlapping_regions failed")
+            # If configured to fail on merge errors, re-raise to surface the
+            # problem to callers (fail-fast). Otherwise fall back to raw regions.
+            try:
+                if getattr(self.config, "fail_on_merge_error", False):
+                    raise
+            except Exception:
+                # avoid masking original exception path if getattr itself fails
+                raise
+            merged = regions
 
         # Debug export: write raw and merged region JSON for inspection.
         # Some OCR return objects may contain numpy types or other non-JSON
@@ -437,6 +553,12 @@ class TextDetector:
                 texts = []
                 confs = []
                 word_boxes: List[Dict[str, Any]] = []
+                char_offset = 0
+                # When EasyOCR returns word-level items for the crop, we need
+                # to record approximate character offsets relative to the
+                # combined region text so downstream mapping can align spans
+                # to word boxes. We conservatively compute offsets by joining
+                # words with single spaces.
                 for item in ocr_out:
                     bbox_pts, txt, conf = item
                     # normalize whitespace
@@ -454,10 +576,20 @@ class TextDetector:
                         abs_box = (int(x1 + wx1), int(y1 + wy1), int(x1 + wx2), int(y1 + wy2))
                     except Exception:
                         abs_box = (int(x1), int(y1), int(x2), int(y2))
+                    # estimate start/end char offsets within combined_text
+                    start_ch = char_offset
+                    token = str(txt or "")
+                    token_len = len(token)
+                    end_ch = start_ch + token_len
+                    word_boxes.append({"text": token, "bbox": abs_box, "confidence": float(conf), "start_char": start_ch, "end_char": end_ch})
+                    # advance offset (account for a space separator)
+                    char_offset = end_ch + 1
 
-                    word_boxes.append({"text": txt, "bbox": abs_box, "confidence": float(conf)})
-
-                combined_text = "\n".join(texts)
+                # Use a canonical single-space join for downstream offset mapping.
+                # Earlier implementations used newlines which led to inconsistencies
+                # when pipeline code assumed single-space joining. Keep token
+                # offsets consistent with this single-space representation.
+                combined_text = " ".join(texts)
                 avg_conf = float(sum(confs) / len(confs)) if confs else 0.0
 
                 r_out = dict(r)
@@ -747,120 +879,93 @@ def merge_adjacent_regions(regions: List[Dict[str, Any]], phi_texts: List[str], 
 
 
 def map_phi_to_exact_regions(phi_detections: List[Dict[str, Any]], text_regions: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """Map phi detections (analyzer output) to exact text regions.
+    """Normalize PHI detections to the canonical PHI detection contract.
 
-    Heuristics:
-    - Prefer exact case-insensitive match between detection text and region text.
-    - If not exact, accept partial matches where region text is a substring
-      of the detection text (and length>2 to avoid one-letter false positives).
-    - If a detection contains multiple words, try to match each word to a
-      region and return one mapping per matched region.
+    Each returned detection has keys:
+        - entity_type (str)
+        - text (str)
+        - start_char (int)
+        - end_char (int)
+        - page_number (int)
+        - bbox ([x1,y1,x2,y2])
+        - confidence (float 0..1)
 
-    Returns a list of phi_regions in the form: {bbox, entity_type, text, confidence}
+    This function attempts to map analyzer detections (which may only have
+    character offsets or only text) to OCR-derived `text_regions` and their
+    `word_boxes`. It uses the centralized `map_text_spans_to_image_bboxes`
+    utility when available.
     """
+    from src.ocr.mapping import map_text_spans_to_image_bboxes
+
+    canonical: List[Dict[str, Any]] = []
+
+    # Build an index of regions: we expect text_regions to have keys
+    # 'text', 'bbox', 'word_boxes' and optionally 'page_number'
+    for region in text_regions or []:
+        region_text = (region.get("text") or "").strip()
+        region_bbox = region.get("bbox")
+        page = int(region.get("page_number", region.get("page", 1) or 1))
+        word_boxes = region.get("word_boxes") or []
+
+        # If word_boxes exist but lack char offsets, try to augment them by
+        # distributing offsets across the region text (best-effort).
+        # Note: extract_text_content now attempts to provide start_char/end_char
+        # for each word when possible.
+
+        # For each phi detection, if it specifies start/end offsets we prefer
+        # to map by that; otherwise we attempt text matching.
+        for det in phi_detections or []:
+            ent = det.get("entity_type") or det.get("phi_type") or det.get("label") or det.get("type")
+            text = det.get("text") or ""
+            # prefer detection offsets when present
+            start = det.get("start") if det.get("start") is not None else det.get("start_char")
+            end = det.get("end") if det.get("end") is not None else det.get("end_char")
+            conf = float(det.get("confidence", det.get("score", 0.0) or 0.0))
+
+            mapped = []
+            try:
+                # try mapping within this region using word_boxes
+                mapped = map_text_spans_to_image_bboxes([{"text": text, "start": start, "end": end}], word_boxes, region_bbox, page)
+            except Exception:
+                mapped = []
+
+            if mapped:
+                for m in mapped:
+                    canonical.append({
+                        "entity_type": ent,
+                        "text": m.get("text", text),
+                        "start_char": int(m.get("start") or m.get("start_char") or 0),
+                        "end_char": int(m.get("end") or m.get("end_char") or 0),
+                        "page_number": int(m.get("page_number", page)),
+                        "bbox": m.get("bbox"),
+                        "confidence": float(conf),
+                    })
+            else:
+                # fall back: if det contained a bbox already, use it; else use region bbox
+                bbox = det.get("bbox") or region_bbox
+                canonical.append({
+                    "entity_type": ent,
+                    "text": text or region_text,
+                    "start_char": int(start or 0),
+                    "end_char": int(end or 0),
+                    "page_number": page,
+                    "bbox": bbox,
+                    "confidence": float(conf),
+                })
+
+    # Deduplicate by (entity_type, text, page_number, bbox)
+    seen = set()
     out: List[Dict[str, Any]] = []
-    # build a normalized text index for quick lookup
-    indexed: List[Tuple[str, Dict[str, Any]]] = []
-    for r in text_regions:
-        rt = (r.get("text") or "").strip()
-        if not rt:
+    for c in canonical:
+        key = (str(c.get("entity_type")), str(c.get("text")), int(c.get("page_number", 1)), tuple(c.get("bbox") or ()))
+        if key in seen:
             continue
-        indexed.append((rt.lower(), r))
-
-    for det in phi_detections:
-        phi_text = (det.get("text") or det.get("entity") or "").strip()
-        if not phi_text:
-            continue
-        ent = det.get("entity_type") or det.get("label") or det.get("type") or det.get("phi_type")
-        conf = float(det.get("score", det.get("confidence", det.get("confidence_score", 0.8))))
-        norm_phi = phi_text.lower()
-
-        # exact match
-        matched = False
-        for rt, r in indexed:
-            if norm_phi == rt:
-                out.append({"bbox": r.get("bbox"), "entity_type": ent, "text": r.get("text"), "confidence": conf})
-                matched = True
-        if matched:
-            continue
-
-        # try substring matches
-        for rt, r in indexed:
-            if len(rt) > 2 and rt in norm_phi:
-                out.append({"bbox": r.get("bbox"), "entity_type": ent, "text": r.get("text"), "confidence": conf})
-                matched = True
-        if matched:
-            continue
-
-        # split detection into words and try to match words individually
-        tokens = [t for t in phi_text.split() if t]
-        if tokens:
-            for token in tokens:
-                nt = token.strip().lower()
-                if not nt or len(nt) <= 1:
-                    continue
-                for rt, r in indexed:
-                    if rt == nt or (len(rt) > 2 and rt in nt) or (len(nt) > 2 and nt in rt):
-                        out.append({"bbox": r.get("bbox"), "entity_type": ent, "text": r.get("text"), "confidence": conf})
-                        matched = True
-        # If nothing matched, fall back to attaching the original detection bbox if present
-        if not matched:
-            orig_bbox = det.get("bbox")
-            if orig_bbox:
-                out.append({"bbox": orig_bbox, "entity_type": ent, "text": phi_text, "confidence": conf})
+        seen.add(key)
+        out.append(c)
 
     return out
 
-    def filter_by_confidence(self, detections: List[Dict[str, Any]], threshold: float, slack: Optional[float] = None) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
-        """Split detections into accepted and rejected using thresholding.
-
-        Uses adaptive thresholding heuristics: short text receives higher min
-        confidence requirements because of increased ambiguity.
-        """
-        accepted = []
-        rejected = []
-        # Determine slack: prefer explicit arg, otherwise use config default
-        if slack is None:
-            try:
-                slack = float(getattr(self.config, "confidence_slack", 0.1))
-            except Exception:
-                slack = 0.1
-        for d in detections:
-            txt = d.get("text", "")
-            conf = float(d.get("confidence", 0.0))
-            # adaptive threshold: shorter texts need higher conf
-            length = len(txt.strip())
-            adapt = 0.0
-            if length <= 3:
-                adapt = 0.15
-            elif length <= 6:
-                adapt = 0.08
-            adj_threshold = min(0.99, threshold + adapt)
-            # allow slack below adjusted threshold
-            effective_thresh = max(0.0, adj_threshold - float(slack))
-            if conf >= effective_thresh:
-                accepted.append(d)
-            else:
-                d["rejection_reason"] = f"confidence {conf:.3f} < {effective_thresh:.3f} (adj {adj_threshold:.3f}, slack {slack:.3f})"
-                rejected.append(d)
-
-        # Audit filter decisions
-        try:
-            self.audit_logger.info(json.dumps({"event": "filter_by_confidence", "accepted": len(accepted), "rejected": len(rejected)}))
-        except Exception:
-            logger.debug("Failed to write audit log for filter_by_confidence")
-
-        # If no regions accepted, keep the highest-confidence region as a fallback
-        if not accepted and detections:
-            best = max(detections, key=lambda x: float(x.get("confidence", 0.0)))
-            # remove best from rejected if present
-            rejected = [r for r in rejected if r is not best]
-            if best not in accepted:
-                accepted.append(best)
-
-        return accepted, rejected
-
-    def merge_overlapping_regions(self, regions: List[Dict[str, Any]], iou_threshold: float = 0.3) -> List[Dict[str, Any]]:
+    def merge_overlapping_regions(self, regions: List[Dict[str, Any]], overlap_thresh: float = 0.3) -> List[Dict[str, Any]]:
         """Merge overlapping bounding boxes preserving the highest-confidence text.
 
         This implementation uses intersection-over-minimum-area (IoM) as the
@@ -904,7 +1009,7 @@ def map_phi_to_exact_regions(phi_detections: List[Dict[str, Any]], text_regions:
                 if used[j]:
                     continue
                 try:
-                    if iom(boxes[i], boxes[j]) >= iou_threshold:
+                    if iom(boxes[i], boxes[j]) >= overlap_thresh:
                         group.append(j)
                         used[j] = True
                 except Exception:

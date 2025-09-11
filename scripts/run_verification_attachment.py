@@ -39,8 +39,15 @@ except Exception:
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("run_verification_attachment")
 
-# Default attachment path (from your workspace attachments)
-DEFAULT_ATTACHMENT = "/Users/harishraghave/Library/Containers/net.whatsapp.WhatsApp/Data/tmp/documents/924879A7-2C9F-46F9-9DD0-0727F2C4B9B4/Highlighted PHI Details Emily_Dawson.pdf"
+# Default attachment path (developer convenience). Use the
+# NASSCOM_DEFAULT_ATTACHMENT environment variable to override in your
+# local development environment. Production runs should always pass
+# --input explicitly.
+DEFAULT_ATTACHMENT = os.environ.get("NASSCOM_DEFAULT_ATTACHMENT")
+if not DEFAULT_ATTACHMENT:
+    # Fallback to a safe, non-existent path to avoid accidental usage of
+    # a personal file path committed in this repo.
+    DEFAULT_ATTACHMENT = str(Path.home() / "Downloads" / "sample_phi_attachment.pdf")
 
 
 def convert_pdf_with_fitz(pdf_path: str, out_dir: str) -> list:

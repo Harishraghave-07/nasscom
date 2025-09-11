@@ -88,7 +88,12 @@ class PresidioAnalyzer:
                 results = self._engine.analyze(text=text, language="en")
                 for r in results:
                     detections.append({
-                        "start": r.start, "end": r.end, "score": float(r.score), "entity_type": r.entity_type, "text": text[r.start : r.end], "meta": meta,
+                        "start": int(getattr(r, "start", None) or r.start),
+                        "end": int(getattr(r, "end", None) or r.end),
+                        "confidence": float(getattr(r, "score", None) or getattr(r, "score", 0.0) or getattr(r, "confidence", 0.0)),
+                        "entity_type": getattr(r, "entity_type", None) or getattr(r, "label", None),
+                        "text": text[int(getattr(r, "start", 0)) : int(getattr(r, "end", 0))],
+                        "meta": meta,
                     })
                 return detections
             except Exception:
@@ -97,7 +102,7 @@ class PresidioAnalyzer:
         # regex-based detections
         for name, cre in self._regexes:
             for m in cre.finditer(text or ""):
-                detections.append({"start": m.start(), "end": m.end(), "score": 0.9, "entity_type": name, "text": m.group(0), "meta": meta})
+                detections.append({"start": m.start(), "end": m.end(), "confidence": 0.9, "entity_type": name, "text": m.group(0), "meta": meta})
 
         # optional spaCy NER fallback
         try:
@@ -105,7 +110,7 @@ class PresidioAnalyzer:
             if self._spacy_nlp is not None:
                 doc = self._spacy_nlp(text or "")
                 for ent in doc.ents:
-                    detections.append({"start": ent.start_char, "end": ent.end_char, "score": 0.85, "entity_type": ent.label_, "text": ent.text, "meta": meta})
+                    detections.append({"start": ent.start_char, "end": ent.end_char, "confidence": 0.85, "entity_type": ent.label_, "text": ent.text, "meta": meta})
         except Exception:
             logger.debug("spaCy fallback NER not applied")
 

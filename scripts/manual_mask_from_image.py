@@ -112,7 +112,7 @@ def main():
             # fallback to PHIClassifier if available
             try:
                 from src.phi_detection.phi_classifier import PHIClassifier
-                pc = PHIClassifier(SETTINGS.phi)
+                pc = PHIClassifier(SETTINGS)
                 detections = pc.detect_phi_in_text(txt, {"source": "manual_mask"})
             except Exception:
                 log.exception("Fallback PHI classifier failed")

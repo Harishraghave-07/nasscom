@@ -85,19 +85,223 @@ class ClinicalImageMaskingPipeline:
         self._temp_root.mkdir(parents=True, exist_ok=True)
 
     def _init_components(self) -> None:
+        # Import components with explicit error handling. Optional deps may be
+        # missing in lightweight test environments; controlled via
+        # ProcessingConfig.allow_missing_optional_dependencies.
         try:
-            # import only when available
             from src.preprocessing.image_processor import ImageProcessor
-            from src.ocr.text_detector import TextDetector
-            from src.phi_detection.phi_classifier import PHIClassifier
-            from src.masking.image_inpainter import ImageInpainter
+        except (ImportError, ModuleNotFoundError) as ie:
+            logger.warning("ImageProcessor not available: %s", ie)
+            ImageProcessor = None
 
-            self.preprocessor = ImageProcessor(self.config.processing)
-            self.ocr = TextDetector(self.config.ocr)
-            self.phi = PHIClassifier(self.config.phi)
-            self.inpainter = ImageInpainter(self.config.mask)
-        except Exception:
-            logger.exception("Component initialization failed - pipeline will attempt lazy recovery")
+        try:
+            from src.ocr.text_detector import TextDetector
+        except (ImportError, ModuleNotFoundError) as ie:
+            logger.warning("TextDetector (EasyOCR) not available: %s", ie)
+            TextDetector = None
+
+        try:
+            from src.phi_detection.phi_classifier import PHIClassifier
+        except (ImportError, ModuleNotFoundError) as ie:
+            logger.warning("PHIClassifier not available: %s", ie)
+            PHIClassifier = None
+
+        try:
+            from src.masking.image_inpainter import ImageInpainter
+        except (ImportError, ModuleNotFoundError) as ie:
+            logger.warning("ImageInpainter not available: %s", ie)
+            ImageInpainter = None
+
+        # Instantiate or mark None; decide fail-fast based on config
+        try:
+            self.preprocessor = ImageProcessor(self.config.processing) if ImageProcessor is not None else None
+            self.ocr = TextDetector(self.config.ocr) if TextDetector is not None else None
+            self.phi = PHIClassifier(self.config) if PHIClassifier is not None else None
+            self.inpainter = ImageInpainter(self.config.mask) if ImageInpainter is not None else None
+        except Exception as e:
+            logger.exception("Failed to instantiate pipeline components: %s", e)
+            if not getattr(self.config.processing, "allow_missing_optional_dependencies", True):
+                raise
+            # otherwise, set to None and continue in degraded mode
+            self.preprocessor = getattr(self, "preprocessor", None)
+            self.ocr = getattr(self, "ocr", None)
+            self.phi = getattr(self, "phi", None)
+            self.inpainter = getattr(self, "inpainter", None)
+
+    def _compute_orig_to_new_index_map(self, orig: str, new: str) -> List[Optional[int]]:
+        """Compute a mapping from indices in orig text to indices in new text.
+
+        This returns a list `orig_to_new` of length len(orig)+1 mapping each
+        original character position to the best corresponding index in the
+        anonymized text. For deleted or replaced spans, original indices map
+        to the start index of the replacement in `new`. Gaps are filled to
+        ensure deterministic mapping.
+        """
+        from difflib import SequenceMatcher
+
+        sm = SequenceMatcher(None, orig or "", new or "")
+        orig_to_new: List[Optional[int]] = [None] * (len(orig) + 1)
+
+        for tag, i1, i2, j1, j2 in sm.get_opcodes():
+            if tag == "equal":
+                for offset in range(i2 - i1):
+                    oi = i1 + offset
+                    orig_to_new[oi] = j1 + offset
+                # map the end index
+                orig_to_new[i2] = j2
+            elif tag == "replace":
+                # map all original indices in the replaced span to the start
+                for oi in range(i1, i2 + 1):
+                    orig_to_new[oi] = j1
+            elif tag == "delete":
+                # deleted original characters point to insertion start in new
+                for oi in range(i1, i2 + 1):
+                    orig_to_new[oi] = j1
+            elif tag == "insert":
+                # nothing to map from orig; ensure boundaries map sensibly
+                # map the index before insertion to j1
+                if i1 >= 0 and i1 <= len(orig):
+                    orig_to_new[i1] = j1
+
+        # fill None entries deterministically by carrying nearest known index
+        last_known = 0
+        for i in range(len(orig) + 1):
+            if orig_to_new[i] is None:
+                orig_to_new[i] = last_known
+            else:
+                last_known = orig_to_new[i]
+        return orig_to_new
+
+    def _remap_offsets_after_anonymize(self, page_text: str, anonymized_text: str, regions: List[Dict], detections: List[Dict]) -> List[Dict]:
+        """Adjust detection start/end offsets and bboxes after anonymization.
+
+        - page_text: original page-level text used for analyzer inputs
+        - anonymized_text: text returned by the anonymizer
+        - regions: OCR regions (must be in same order used to build page_text)
+        - detections: list of phi detection dicts (may contain start/end)
+
+        This function attempts to compute a char-index mapping between the
+        original and anonymized text, update detection spans accordingly, and
+        re-map bboxes using per-word boxes when available.
+        """
+        try:
+            if not isinstance(page_text, str) or not isinstance(anonymized_text, str):
+                return detections
+
+            # build page-level word_boxes with absolute char offsets
+            page_word_boxes: List[Dict[str, Any]] = []
+            cursor = 0
+            for r in regions:
+                rtext = (r.get("text") or "")
+                # skip empty regions but still reserve a separating space if needed
+                if cursor != 0 and rtext:
+                    cursor += 1  # account for the joining space used when building page_text
+                # attach region start
+                region_start = cursor
+                word_boxes = r.get("word_boxes") or []
+                for w in word_boxes:
+                    try:
+                        ws = int(w.get("start_char", 0))
+                        we = int(w.get("end_char", 0))
+                        # word_boxes start_char are region-relative in extraction; compute absolute
+                        abs_start = region_start + ws
+                        abs_end = region_start + we
+                        pb = dict(w)
+                        pb["start_char"] = abs_start
+                        pb["end_char"] = abs_end
+                        page_word_boxes.append(pb)
+                    except Exception:
+                        continue
+                cursor = region_start + len(rtext)
+
+            # compute index mapping between original page text and anonymized text
+            index_map = self._compute_orig_to_new_index_map(page_text or "", anonymized_text or "")
+
+            def map_span(s: int, e: int) -> Tuple[int, int]:
+                # clamp inputs
+                s = max(0, min(len(page_text), int(s or 0)))
+                e = max(0, min(len(page_text), int(e or 0)))
+                new_s = int(index_map[s])
+                # map exclusive end by mapping e-1 then +1
+                if e > 0:
+                    new_e = int(index_map[max(0, e - 1)]) + 1
+                else:
+                    new_e = int(index_map[0])
+                return new_s, new_e
+
+            # For remapping, recalculate absolute page_word_boxes using canonical region text
+            try:
+                from src.ocr.mapping import map_text_spans_to_image_bboxes
+            except Exception:
+                map_text_spans_to_image_bboxes = None
+
+            for d in detections:
+                try:
+                    orig_start = d.get("start") if d.get("start") is not None else d.get("start_char")
+                    orig_end = d.get("end") if d.get("end") is not None else d.get("end_char")
+                    orig_start = int(orig_start) if orig_start is not None else None
+                    orig_end = int(orig_end) if orig_end is not None else None
+                except Exception:
+                    orig_start, orig_end = None, None
+
+                # prefer numeric spans; map via index_map
+                if orig_start is not None and orig_end is not None:
+                    new_s, new_e = map_span(orig_start, orig_end)
+                    d["anonymized_start"] = new_s
+                    d["anonymized_end"] = new_e
+                    d["start"] = new_s
+                    d["end"] = new_e
+                else:
+                    # fall back to searching anonymized_text for the detection text
+                    txt = (d.get("text") or "").strip()
+                    if txt:
+                        pos = anonymized_text.find(txt)
+                        if pos >= 0:
+                            d["start"] = pos
+                            d["end"] = pos + len(txt)
+                            d["anonymized_start"] = d["start"]
+                            d["anonymized_end"] = d["end"]
+
+                # attempt to re-map bbox using page_word_boxes (preferred) if mapping util available
+                try:
+                    if map_text_spans_to_image_bboxes is not None:
+                        # rebuild page_word_boxes with absolute offsets as earlier
+                        page_word_boxes: List[Dict[str, Any]] = []
+                        cursor = 0
+                        for r in regions:
+                            rtext = (r.get("text") or "").strip()
+                            if cursor != 0 and rtext:
+                                cursor += 1
+                            region_start = cursor
+                            word_boxes = r.get("word_boxes") or []
+                            for w in word_boxes:
+                                try:
+                                    ws = int(w.get("start_char", 0))
+                                    we = int(w.get("end_char", 0))
+                                    abs_start = region_start + ws
+                                    abs_end = region_start + we
+                                    pb = dict(w)
+                                    pb["start_char"] = abs_start
+                                    pb["end_char"] = abs_end
+                                    page_word_boxes.append(pb)
+                                except Exception:
+                                    continue
+                            cursor = region_start + len(rtext)
+
+                        mapped = map_text_spans_to_image_bboxes([
+                            {"text": d.get("text", ""), "start": int(d.get("start", 0)), "end": int(d.get("end", 0))}
+                        ], page_word_boxes, None, page_number=1)
+                        if mapped and mapped[0].get("bbox"):
+                            m = mapped[0]
+                            d["bbox"] = m.get("bbox")
+                            d["page_number"] = m.get("page_number", 1)
+                except Exception:
+                    logger.exception("map_text_spans_to_image_bboxes failed during remap; leaving bbox unchanged for detection %s", d.get("text"))
+
+            return detections
+        except Exception as e:
+            logger.exception("Failed to remap offsets after anonymization: %s", e)
+            return detections
 
     # ---------------- pipeline helpers ----------------
     def _timeit(self, fn: Callable, *args, **kwargs) -> Tuple[Any, float, Optional[Exception]]:
@@ -143,36 +347,29 @@ class ClinicalImageMaskingPipeline:
         # to route this request to the new Presidio pipeline. The percentage is
         # configurable via the AppConfig (attribute `presidio_canary_percentage`)
         # or via a `config.yaml` file with key `presidio_canary_percentage: N`.
-        presidio_pct = 0
+        # Determine Presid.io usage from centralized AppConfig fields.
         try:
-            # prefer explicit attribute on the provided config
             presidio_pct = int(getattr(self.config, "presidio_canary_percentage", 0) or 0)
         except Exception:
             presidio_pct = 0
 
-        if presidio_pct <= 0:
-            # fallback: try to read repository config yaml (best-effort, lightweight)
-            try:
-                for cfg_path in (Path("config.yaml"), Path("config") / "config.yaml"):
-                    if cfg_path.exists():
-                        txt = cfg_path.read_text(encoding="utf-8")
-                        m = re.search(r"presidio_canary_percentage\s*:\s*(\d{1,3})", txt)
-                        if m:
-                            try:
-                                presidio_pct = int(m.group(1))
-                                break
-                            except Exception:
-                                presidio_pct = 0
-            except Exception:
-                presidio_pct = presidio_pct or 0
-
-        # clamp to sensible bounds
+        # Ensure canary bounds
         presidio_pct = max(0, min(100, int(presidio_pct or 0)))
 
-        # roll the dice for this image
+        # Global toggle must be enabled to route any traffic to Presidio
+        if not bool(getattr(self.config, "use_presidio", False)):
+            presidio_pct = 0
+
+        # roll the dice for this image when canary > 0
         roll = random.randint(1, 100)
         use_presidio_pipeline = roll <= presidio_pct
-        self.logger.info("Presidio canary routing: roll=%d presidio_pct=%d use_presidio=%s for image=%s", roll, presidio_pct, use_presidio_pipeline, image_id)
+        self.logger.info(
+            "Presidio canary routing: roll=%d presidio_pct=%d use_presidio=%s for image=%s",
+            roll,
+            presidio_pct,
+            use_presidio_pipeline,
+            image_id,
+        )
 
         session_temp = Path(tempfile.mkdtemp(prefix=f"cim_{image_id}_", dir=str(self._temp_root)))
         stage_results: Dict[str, StageResult] = {}
@@ -262,8 +459,9 @@ class ClinicalImageMaskingPipeline:
                 if isinstance(meta, dict):
                     page_text = meta.get("page_text")
                 if not page_text:
-                    # fallback: concatenate region text in document order
-                    page_text = " ".join([r.get("text", "") for r in regions or []])
+                    # Build canonical page_text using single-space join to match
+                    # TextDetector.extract_text_content normalization.
+                    page_text = " ".join([(r.get("text") or "").strip() for r in regions or []])
 
                 # lazy import of presidio anonymizer classes
                 from presidio_anonymizer import AnonymizerEngine, OperatorConfig  # type: ignore
@@ -302,6 +500,14 @@ class ClinicalImageMaskingPipeline:
                 # store anonymized text in metadata for downstream steps
                 if isinstance(meta, dict):
                     meta["anonymized_text"] = anonymized_text
+
+                # If anonymizer changed text length/positions, remap detection
+                # spans and image bboxes so downstream masking remains aligned.
+                try:
+                    if anonymized_text and page_text and (anonymized_text != page_text):
+                        phi_regions = self._remap_offsets_after_anonymize(page_text, anonymized_text, regions, phi_regions) or phi_regions
+                except Exception:
+                    logger.exception("Offset remapping after anonymization failed")
             except Exception:
                 # anonymizer not available or failed; continue without anonymized text
                 logger.debug("Anonymizer step skipped or failed; proceeding to masking")
@@ -462,8 +668,29 @@ class ClinicalImageMaskingPipeline:
             raise RuntimeError("PHI classifier not initialized")
 
         classified = []
-        use_presidio = bool(context.get("use_presidio_pipeline", False))
+        # Determine use_presidio centrally from AppConfig. Context may include
+        # a pre-computed canary decision but we enforce coherence with the
+        # top-level config to avoid scattered toggles.
         shadow_mode = bool(context.get("shadow_mode", False))
+        try:
+            cfg_use_presidio = bool(getattr(self.config, "use_presidio", False))
+            cfg_pct = int(getattr(self.config, "presidio_canary_percentage", 0) or 0)
+        except Exception:
+            cfg_use_presidio = False
+            cfg_pct = 0
+
+        # If global toggle is disabled, do not run Presidio.
+        if not cfg_use_presidio:
+            use_presidio = False
+        else:
+            # If a canary percentage is configured, roll per-image.
+            if cfg_pct <= 0:
+                use_presidio = False
+            elif cfg_pct >= 100:
+                use_presidio = True
+            else:
+                roll = random.randint(1, 100)
+                use_presidio = roll <= cfg_pct
 
         # prepare per-document collections for shadow auditing when needed
         legacy_report = {"detections": []}

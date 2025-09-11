@@ -198,7 +198,7 @@ class InteractiveTroubleshooter:
         """Create the simplest possible working example"""
         example_code = '''
 import cv2
-import easyocr
+# Note: import easyocr lazily when running to avoid importing heavy deps at module import
 import numpy as np
 
 # Create simple test

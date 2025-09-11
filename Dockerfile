@@ -1,3 +1,38 @@
+FROM python:3.11-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+# Install system deps required by some wheels (opencv, torch may need libstdc++)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    git \
+    curl \
+    ca-certificates \
+    libgl1 \
+    libsm6 \
+    libxrender1 \
+    libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy minimal project files
+COPY requirements-core.txt /app/
+COPY requirements-presidio.txt /app/
+COPY . /app/
+
+# Create a venv and install core deps first
+RUN python -m venv /opt/venv && /opt/venv/bin/pip install --upgrade pip wheel
+RUN /opt/venv/bin/pip install -r /app/requirements-core.txt
+
+# Optional heavy deps - install on demand to avoid bloating base image
+RUN /opt/venv/bin/pip install -r /app/requirements-presidio.txt || echo "Optional heavy deps may fail in constrained environments"
+
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Default command: run tests (CI can override)
+CMD ["pytest", "-q"]
 
 # syntax=docker/dockerfile:1
 

@@ -1,0 +1,20 @@
+name: CI — lockfile & path lint
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lockfile-and-paths:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Run lockfile & path checks
+        run: |
+          python scripts/check_lockfile_and_paths.py
