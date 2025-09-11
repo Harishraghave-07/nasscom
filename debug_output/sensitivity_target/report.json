@@ -1,0 +1,218 @@
+{
+  "input_dir": "synthetic_data",
+  "reports": [
+    {
+      "image_id": "fake_phi_001",
+      "stages": {
+        "preprocess": {
+          "name": "preprocess",
+          "duration_s": 0.010280167000018992,
+          "result": {
+            "orig_shape": [
+              800,
+              1200
+            ],
+            "processed_shape": [
+              1200,
+              1200,
+              3
+            ],
+            "anonymized_text": null
+          },
+          "error": null
+        },
+        "text_detection": {
+          "name": "text_detection",
+          "duration_s": 2.5457487080002466,
+          "result": {
+            "detected": 1,
+            "accepted": 1,
+            "rejected": 0
+          },
+          "error": null
+        },
+        "phi_classification": {
+          "name": "phi_classification",
+          "duration_s": 0.00012574999982462032,
+          "result": {
+            "phi_count": 0,
+            "used_presidio": false,
+            "shadow_mode": false
+          },
+          "error": null
+        },
+        "masking": {
+          "name": "masking",
+          "duration_s": 0.1628799579993938,
+          "result": {
+            "merged": false,
+            "method": "telea",
+            "mask_coverage": 0.0,
+            "quality": {
+              "psnr": 56.088096618652344,
+              "ssim": 0.9999764063463717,
+              "edge_preservation": 1.0,
+              "texture_consistency": 0.999995768070221,
+              "notes": []
+            }
+          },
+          "error": null
+        }
+      },
+      "quality": {
+        "total_time_s": 2.782238457999483
+      },
+      "metrics": {
+        "processed": 3,
+        "errors": 0,
+        "stages": {}
+      },
+      "timestamp": 1757577574.7807722,
+      "phi_regions": [],
+      "input": "synthetic_data/fake_phi_001.png",
+      "masked_output": "debug_output/sensitivity_target/fake_phi_001_masked.png"
+    },
+    {
+      "image_id": "fake_phi_003",
+      "stages": {
+        "preprocess": {
+          "name": "preprocess",
+          "duration_s": 0.004419249999955355,
+          "result": {
+            "orig_shape": [
+              800,
+              1200
+            ],
+            "processed_shape": [
+              1200,
+              1200,
+              3
+            ],
+            "anonymized_text": null
+          },
+          "error": null
+        },
+        "text_detection": {
+          "name": "text_detection",
+          "duration_s": 1.9856310830000439,
+          "result": {
+            "detected": 1,
+            "accepted": 1,
+            "rejected": 0
+          },
+          "error": null
+        },
+        "phi_classification": {
+          "name": "phi_classification",
+          "duration_s": 7.579099928989308e-05,
+          "result": {
+            "phi_count": 0,
+            "used_presidio": false,
+            "shadow_mode": false
+          },
+          "error": null
+        },
+        "masking": {
+          "name": "masking",
+          "duration_s": 0.16181608299939398,
+          "result": {
+            "merged": false,
+            "method": "telea",
+            "mask_coverage": 0.0,
+            "quality": {
+              "psnr": 55.88890838623047,
+              "ssim": 0.9999749185905009,
+              "edge_preservation": 1.0,
+              "texture_consistency": 0.9999964237213135,
+              "notes": []
+            }
+          },
+          "error": null
+        }
+      },
+      "quality": {
+        "total_time_s": 2.1591517919996477
+      },
+      "metrics": {
+        "processed": 3,
+        "errors": 0,
+        "stages": {}
+      },
+      "timestamp": 1757577576.941313,
+      "phi_regions": [],
+      "input": "synthetic_data/fake_phi_003.png",
+      "masked_output": "debug_output/sensitivity_target/fake_phi_003_masked.png"
+    },
+    {
+      "image_id": "fake_phi_002",
+      "stages": {
+        "preprocess": {
+          "name": "preprocess",
+          "duration_s": 0.004162250000263157,
+          "result": {
+            "orig_shape": [
+              800,
+              1200
+            ],
+            "processed_shape": [
+              1200,
+              1200,
+              3
+            ],
+            "anonymized_text": null
+          },
+          "error": null
+        },
+        "text_detection": {
+          "name": "text_detection",
+          "duration_s": 1.9234965420000663,
+          "result": {
+            "detected": 1,
+            "accepted": 1,
+            "rejected": 0
+          },
+          "error": null
+        },
+        "phi_classification": {
+          "name": "phi_classification",
+          "duration_s": 6.287500036705751e-05,
+          "result": {
+            "phi_count": 0,
+            "used_presidio": false,
+            "shadow_mode": false
+          },
+          "error": null
+        },
+        "masking": {
+          "name": "masking",
+          "duration_s": 0.1630164580001292,
+          "result": {
+            "merged": false,
+            "method": "telea",
+            "mask_coverage": 0.0,
+            "quality": {
+              "psnr": 56.01522445678711,
+              "ssim": 0.9999755673187626,
+              "edge_preservation": 1.0,
+              "texture_consistency": 0.9999943971633911,
+              "notes": []
+            }
+          },
+          "error": null
+        }
+      },
+      "quality": {
+        "total_time_s": 2.097958749999634
+      },
+      "metrics": {
+        "processed": 3,
+        "errors": 0,
+        "stages": {}
+      },
+      "timestamp": 1757577579.0404139,
+      "phi_regions": [],
+      "input": "synthetic_data/fake_phi_002.png",
+      "masked_output": "debug_output/sensitivity_target/fake_phi_002_masked.png"
+    }
+  ]
+}

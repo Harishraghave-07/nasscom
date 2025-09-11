@@ -1,0 +1,225 @@
+{
+  "run": "ocr45_f80_phi80_ov30",
+  "params": {
+    "ocr_threshold": 0.45,
+    "fuzz": 80,
+    "phi_threshold": 0.8,
+    "overlap_thresh": 0.3
+  },
+  "reports": [
+    {
+      "image_id": "fake_phi_001",
+      "stages": {
+        "preprocess": {
+          "name": "preprocess",
+          "duration_s": 0.003919167000276502,
+          "result": {
+            "orig_shape": [
+              800,
+              1200
+            ],
+            "processed_shape": [
+              1200,
+              1200,
+              3
+            ],
+            "anonymized_text": null
+          },
+          "error": null
+        },
+        "text_detection": {
+          "name": "text_detection",
+          "duration_s": 2.2376338750000286,
+          "result": {
+            "detected": 1,
+            "accepted": 1,
+            "rejected": 0
+          },
+          "error": null
+        },
+        "phi_classification": {
+          "name": "phi_classification",
+          "duration_s": 7.520899998780806e-05,
+          "result": {
+            "phi_count": 0,
+            "used_presidio": false,
+            "shadow_mode": false
+          },
+          "error": null
+        },
+        "masking": {
+          "name": "masking",
+          "duration_s": 0.17258516699985194,
+          "result": {
+            "merged": false,
+            "method": "telea",
+            "mask_coverage": 0.0,
+            "quality": {
+              "psnr": 56.088096618652344,
+              "ssim": 0.9999764063463717,
+              "edge_preservation": 1.0,
+              "texture_consistency": 0.999995768070221,
+              "notes": []
+            }
+          },
+          "error": null
+        }
+      },
+      "quality": {
+        "total_time_s": 2.421537334000277
+      },
+      "metrics": {
+        "processed": 3,
+        "errors": 0,
+        "stages": {}
+      },
+      "timestamp": 1757577273.315418,
+      "phi_regions": [],
+      "input": "/Users/harishraghave/Downloads/nasscom/synthetic_data/fake_phi_001.png",
+      "masked_output": "/Users/harishraghave/Downloads/nasscom/debug_output/sensitivity_runs/ocr45_f80_phi80_ov30/fake_phi_001_masked.png"
+    },
+    {
+      "image_id": "fake_phi_003",
+      "stages": {
+        "preprocess": {
+          "name": "preprocess",
+          "duration_s": 0.004283041999769921,
+          "result": {
+            "orig_shape": [
+              800,
+              1200
+            ],
+            "processed_shape": [
+              1200,
+              1200,
+              3
+            ],
+            "anonymized_text": null
+          },
+          "error": null
+        },
+        "text_detection": {
+          "name": "text_detection",
+          "duration_s": 2.132872958000007,
+          "result": {
+            "detected": 1,
+            "accepted": 1,
+            "rejected": 0
+          },
+          "error": null
+        },
+        "phi_classification": {
+          "name": "phi_classification",
+          "duration_s": 7.224999990285141e-05,
+          "result": {
+            "phi_count": 0,
+            "used_presidio": false,
+            "shadow_mode": false
+          },
+          "error": null
+        },
+        "masking": {
+          "name": "masking",
+          "duration_s": 0.16655466700012767,
+          "result": {
+            "merged": false,
+            "method": "telea",
+            "mask_coverage": 0.0,
+            "quality": {
+              "psnr": 55.88890838623047,
+              "ssim": 0.9999749185905009,
+              "edge_preservation": 1.0,
+              "texture_consistency": 0.9999964237213135,
+              "notes": []
+            }
+          },
+          "error": null
+        }
+      },
+      "quality": {
+        "total_time_s": 2.3110317919999943
+      },
+      "metrics": {
+        "processed": 3,
+        "errors": 0,
+        "stages": {}
+      },
+      "timestamp": 1757577275.6275,
+      "phi_regions": [],
+      "input": "/Users/harishraghave/Downloads/nasscom/synthetic_data/fake_phi_003.png",
+      "masked_output": "/Users/harishraghave/Downloads/nasscom/debug_output/sensitivity_runs/ocr45_f80_phi80_ov30/fake_phi_003_masked.png"
+    },
+    {
+      "image_id": "fake_phi_002",
+      "stages": {
+        "preprocess": {
+          "name": "preprocess",
+          "duration_s": 0.0037813340004504425,
+          "result": {
+            "orig_shape": [
+              800,
+              1200
+            ],
+            "processed_shape": [
+              1200,
+              1200,
+              3
+            ],
+            "anonymized_text": null
+          },
+          "error": null
+        },
+        "text_detection": {
+          "name": "text_detection",
+          "duration_s": 2.1109226660000786,
+          "result": {
+            "detected": 1,
+            "accepted": 1,
+            "rejected": 0
+          },
+          "error": null
+        },
+        "phi_classification": {
+          "name": "phi_classification",
+          "duration_s": 7.974999971338548e-05,
+          "result": {
+            "phi_count": 0,
+            "used_presidio": false,
+            "shadow_mode": false
+          },
+          "error": null
+        },
+        "masking": {
+          "name": "masking",
+          "duration_s": 0.16856424999969022,
+          "result": {
+            "merged": false,
+            "method": "telea",
+            "mask_coverage": 0.0,
+            "quality": {
+              "psnr": 56.01522445678711,
+              "ssim": 0.9999755673187626,
+              "edge_preservation": 1.0,
+              "texture_consistency": 0.9999943971633911,
+              "notes": []
+            }
+          },
+          "error": null
+        }
+      },
+      "quality": {
+        "total_time_s": 2.290717458000472
+      },
+      "metrics": {
+        "processed": 3,
+        "errors": 0,
+        "stages": {}
+      },
+      "timestamp": 1757577277.9194481,
+      "phi_regions": [],
+      "input": "/Users/harishraghave/Downloads/nasscom/synthetic_data/fake_phi_002.png",
+      "masked_output": "/Users/harishraghave/Downloads/nasscom/debug_output/sensitivity_runs/ocr45_f80_phi80_ov30/fake_phi_002_masked.png"
+    }
+  ],
+  "timestamp": "2025-09-11T07:54:37.920271"
+}

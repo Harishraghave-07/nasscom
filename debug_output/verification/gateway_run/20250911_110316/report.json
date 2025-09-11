@@ -1,0 +1,206 @@
+{
+  "input_pdf": "/Users/harishraghave/Downloads/nasscom/Highlighted PHI Details Emily_Dawson.pdf",
+  "reports": [
+    {
+      "image_id": "page_001",
+      "stages": {
+        "preprocess": {
+          "name": "preprocess",
+          "duration_s": 0.021013749999838183,
+          "result": {
+            "orig_shape": [
+              1685,
+              1191
+            ],
+            "processed_shape": [
+              1685,
+              1685,
+              3
+            ],
+            "anonymized_text": null
+          },
+          "error": null
+        },
+        "text_detection": {
+          "name": "text_detection",
+          "duration_s": 6.078298915999994,
+          "result": {
+            "detected": 1,
+            "accepted": 0,
+            "rejected": 1
+          },
+          "error": null
+        },
+        "phi_classification": {
+          "name": "phi_classification",
+          "duration_s": 8.808300003693148e-05,
+          "result": {
+            "phi_count": 0,
+            "used_presidio": false,
+            "shadow_mode": false
+          },
+          "error": null
+        },
+        "masking": {
+          "name": "masking",
+          "duration_s": 0.25749341599998843,
+          "result": {
+            "method": "blackbox",
+            "quality": {
+              "psnr": 0.0,
+              "ssim": 0.0,
+              "edge_preservation": 0.0,
+              "texture_consistency": 0.0
+            }
+          },
+          "error": null
+        }
+      },
+      "quality": {
+        "total_time_s": 6.477925584000104
+      },
+      "metrics": {
+        "processed": 3,
+        "errors": 0,
+        "stages": {}
+      },
+      "timestamp": 1757568807.26239,
+      "input": "/var/folders/_5/yxm6dd5s3pjbmxmp6g3x1xgc0000gn/T/verif_pdf_rbk7k7sq/page_001.png",
+      "masked_output": "debug_output/verification/gateway_run/20250911_110316/page_001_masked.png"
+    },
+    {
+      "image_id": "page_002",
+      "stages": {
+        "preprocess": {
+          "name": "preprocess",
+          "duration_s": 0.006078249999973195,
+          "result": {
+            "orig_shape": [
+              1685,
+              1191
+            ],
+            "processed_shape": [
+              1685,
+              1685,
+              3
+            ],
+            "anonymized_text": null
+          },
+          "error": null
+        },
+        "text_detection": {
+          "name": "text_detection",
+          "duration_s": 4.676227334000032,
+          "result": {
+            "detected": 1,
+            "accepted": 0,
+            "rejected": 1
+          },
+          "error": null
+        },
+        "phi_classification": {
+          "name": "phi_classification",
+          "duration_s": 7.93330000306014e-05,
+          "result": {
+            "phi_count": 0,
+            "used_presidio": false,
+            "shadow_mode": false
+          },
+          "error": null
+        },
+        "masking": {
+          "name": "masking",
+          "duration_s": 0.2565605409999989,
+          "result": {
+            "method": "blackbox",
+            "quality": {
+              "psnr": 0.0,
+              "ssim": 0.0,
+              "edge_preservation": 0.0,
+              "texture_consistency": 0.0
+            }
+          },
+          "error": null
+        }
+      },
+      "quality": {
+        "total_time_s": 4.957767333999982
+      },
+      "metrics": {
+        "processed": 3,
+        "errors": 0,
+        "stages": {}
+      },
+      "timestamp": 1757568812.22193,
+      "input": "/var/folders/_5/yxm6dd5s3pjbmxmp6g3x1xgc0000gn/T/verif_pdf_rbk7k7sq/page_002.png",
+      "masked_output": "debug_output/verification/gateway_run/20250911_110316/page_002_masked.png"
+    },
+    {
+      "image_id": "page_003",
+      "stages": {
+        "preprocess": {
+          "name": "preprocess",
+          "duration_s": 0.0061482080000132555,
+          "result": {
+            "orig_shape": [
+              1685,
+              1191
+            ],
+            "processed_shape": [
+              1685,
+              1685,
+              3
+            ],
+            "anonymized_text": null
+          },
+          "error": null
+        },
+        "text_detection": {
+          "name": "text_detection",
+          "duration_s": 4.5500771250001435,
+          "result": {
+            "detected": 1,
+            "accepted": 0,
+            "rejected": 1
+          },
+          "error": null
+        },
+        "phi_classification": {
+          "name": "phi_classification",
+          "duration_s": 8.595799999966403e-05,
+          "result": {
+            "phi_count": 0,
+            "used_presidio": false,
+            "shadow_mode": false
+          },
+          "error": null
+        },
+        "masking": {
+          "name": "masking",
+          "duration_s": 0.25637637500017263,
+          "result": {
+            "method": "blackbox",
+            "quality": {
+              "psnr": 0.0,
+              "ssim": 0.0,
+              "edge_preservation": 0.0,
+              "texture_consistency": 0.0
+            }
+          },
+          "error": null
+        }
+      },
+      "quality": {
+        "total_time_s": 4.8311387500000365
+      },
+      "metrics": {
+        "processed": 3,
+        "errors": 0,
+        "stages": {}
+      },
+      "timestamp": 1757568817.054415,
+      "input": "/var/folders/_5/yxm6dd5s3pjbmxmp6g3x1xgc0000gn/T/verif_pdf_rbk7k7sq/page_003.png",
+      "masked_output": "debug_output/verification/gateway_run/20250911_110316/page_003_masked.png"
+    }
+  ]
+}

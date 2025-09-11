@@ -1,0 +1,112 @@
+{
+  "image_id": "page_3",
+  "stages": {
+    "preprocess": {
+      "name": "preprocess",
+      "duration_s": 0.015433542000209854,
+      "result": {
+        "orig_shape": [
+          2339,
+          1654
+        ]
+      },
+      "error": null
+    },
+    "text_detection": {
+      "name": "text_detection",
+      "duration_s": 0.00013233300069259712,
+      "result": {
+        "detected": 5,
+        "accepted": 5,
+        "rejected": 0
+      },
+      "error": null
+    },
+    "phi_classification": {
+      "name": "phi_classification",
+      "duration_s": 8.750002962187864e-07,
+      "result": {},
+      "error": "PHI classifier not initialized"
+    },
+    "masking": {
+      "name": "masking",
+      "duration_s": 0.0012653339999815216,
+      "result": {
+        "method": "fallback_blackbox",
+        "error": true
+      },
+      "error": null
+    }
+  },
+  "quality": {
+    "total_time_s": 0.03464524999981222
+  },
+  "metrics": {
+    "processed": 3,
+    "errors": 6,
+    "stages": {}
+  },
+  "timestamp": 1757573234.436175,
+  "phi_regions": [
+    {
+      "text": "SYNTH_TEXT_ROW_1",
+      "bbox": [
+        82,
+        10,
+        1571,
+        457
+      ],
+      "phi_type": "unknown",
+      "confidence": 0.0,
+      "needs_manual_review": true
+    },
+    {
+      "text": "SYNTH_TEXT_ROW_2",
+      "bbox": [
+        82,
+        477,
+        1571,
+        925
+      ],
+      "phi_type": "unknown",
+      "confidence": 0.0,
+      "needs_manual_review": true
+    },
+    {
+      "text": "SYNTH_TEXT_ROW_3",
+      "bbox": [
+        82,
+        945,
+        1571,
+        1393
+      ],
+      "phi_type": "unknown",
+      "confidence": 0.0,
+      "needs_manual_review": true
+    },
+    {
+      "text": "SYNTH_TEXT_ROW_4",
+      "bbox": [
+        82,
+        1413,
+        1571,
+        1861
+      ],
+      "phi_type": "unknown",
+      "confidence": 0.0,
+      "needs_manual_review": true
+    },
+    {
+      "text": "SYNTH_TEXT_ROW_5",
+      "bbox": [
+        82,
+        1881,
+        1571,
+        2329
+      ],
+      "phi_type": "unknown",
+      "confidence": 0.0,
+      "needs_manual_review": true
+    }
+  ]
+}

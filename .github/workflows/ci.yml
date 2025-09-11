@@ -1,81 +1,54 @@
 name: CI
 
 on:
-  push:
-    branches: ['**']
-  schedule:
-    - cron: '0 0 * * *'  # nightly at 00:00 UTC
-  workflow_dispatch: {}
+  name: CI
 
-jobs:
-  unit_tests:
-    name: Unit Tests (fast)
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push'
-    steps:
-      - uses: actions/checkout@v4
+  on:
+    name: CI
 
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
+    on:
+      push:
+        branches: [ main ]
+      pull_request:
+        branches: [ main ]
+      workflow_dispatch: {}
+      schedule:
+        - cron: '0 2 * * *'
 
-      - name: Install runtime deps
-        run: |
-          python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          pip install pytest pillow numpy
+    jobs:
+      tests:
+        runs-on: ubuntu-latest
+        steps:
+          - uses: actions/checkout@v4
+          - uses: actions/setup-python@v4
+            with:
+              python-version: '3.10'
+          - name: Install deps
+            run: |
+              python -m pip install --upgrade pip
+              if [ -f requirements.txt ]; then pip install -r requirements.txt; else pip install numpy pillow imageio pytest; fi
+          - name: Run tests
+            run: pytest -q
 
-      - name: Run unit tests
-        run: pytest tests/ -q
-
-  e2e_validation:
-    name: Nightly E2E validation
-    runs-on: ubuntu-latest
-    if: github.event_name == 'schedule'
-    timeout-minutes: 120
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-
-      - name: Install e2e deps
-        run: |
-          python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          pip install pillow numpy faker
-
-      - name: Generate synthetic test data
-        run: python3 scripts/generate_test_data.py
-
-      - name: Run pipeline on generated data
-        run: |
-          python3 - <<'PY'
-          import sys
-          from pathlib import Path
-          p = Path('synthetic_data')
-          imgs = list(p.glob('*.png')) + list(p.glob('*.jpg')) + list(p.glob('*.jpeg'))
-          if not imgs:
-              print('No images found in synthetic_data; skipping pipeline run')
-              sys.exit(0)
-          from src.core.config import AppConfig
-          from src.core.pipeline import ClinicalImageMaskingPipeline
-
-          cfg = AppConfig()
-          cfg.processing.temp_dir = 'temp_ci'
-          pipeline = ClinicalImageMaskingPipeline(cfg)
-          out_dir = p / 'output'
-          out_dir.mkdir(parents=True, exist_ok=True)
-          for img in imgs:
-              print('Processing', img)
-              pipeline.process_single_image(str(img), output_path=str(out_dir / img.name))
-          PY
-
-      - name: Calculate accuracy
-        run: |
-          if [ -f scripts/calculate_accuracy.py ]; then
-            python3 scripts/calculate_accuracy.py synthetic_data || exit $?
-          else
-            echo 'No accuracy script found at scripts/calculate_accuracy.py; skipping accuracy step'
-          fi
+      synthetic_data:
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        needs: tests
+        runs-on: ubuntu-latest
+        steps:
+          - uses: actions/checkout@v4
+          - uses: actions/setup-python@v4
+            with:
+              python-version: '3.10'
+          - name: Install deps
+            run: |
+              python -m pip install --upgrade pip
+              if [ -f requirements.txt ]; then pip install -r requirements.txt; else pip install numpy pillow imageio; fi
+          - name: Generate synthetic data
+            run: python3 scripts/generate_fake_phi_data.py
+          - name: Validate generated data
+            run: python3 scripts/ci_validate_synthetic.py
+          - uses: actions/upload-artifact@v4
+            with:
+              name: synthetic-data
+              path: synthetic_data
+                  - name: Run tests

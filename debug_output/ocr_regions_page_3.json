@@ -1,0 +1,14 @@
+{
+  "regions": [
+    {
+      "bbox": [
+        49,
+        84,
+        147,
+        189
+      ],
+      "confidence": 0.0,
+      "low_confidence": true,
+      "box_points": [
+        [
+          

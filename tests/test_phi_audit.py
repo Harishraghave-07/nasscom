@@ -35,8 +35,8 @@ def test_audit_log_redaction_and_nonredacted(caplog):
 
     # sample text containing an email and phone
     text = "Contact: john.doe@example.com or +1-555-123-4567"
-    with caplog:
-        res = clf.detect_phi_in_text(text, context={"image_id": "img1"})
+    # call detection and let caplog capture emitted logs
+    res = clf.detect_phi_in_text(text, context={"image_id": "img1"})
 
     # We expect detections returned
     assert isinstance(res, list)

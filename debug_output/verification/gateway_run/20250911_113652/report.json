@@ -1,0 +1,204 @@
+{
+  "input_pdf": "/Users/harishraghave/Downloads/nasscom/Highlighted PHI Details Emily_Dawson.pdf",
+  "reports": [
+    {
+      "image_id": "page_001",
+      "stages": {
+        "preprocess": {
+          "name": "preprocess",
+          "duration_s": 0.011840542000300047,
+          "result": {
+            "orig_shape": [
+              1685,
+              1191
+            ],
+            "processed_shape": [
+              1685,
+              1685,
+              3
+            ]
+          },
+          "error": null
+        },
+        "text_detection": {
+          "name": "text_detection",
+          "duration_s": 5.934956416999739,
+          "result": {
+            "detected": 1,
+            "accepted": 1,
+            "rejected": 0
+          },
+          "error": null
+        },
+        "phi_classification": {
+          "name": "phi_classification",
+          "duration_s": 0.012753208000049199,
+          "result": {
+            "phi_count": 2,
+            "used_presidio": false,
+            "shadow_mode": false
+          },
+          "error": null
+        },
+        "masking": {
+          "name": "masking",
+          "duration_s": 0.26192924999986644,
+          "result": {
+            "method": "blackbox",
+            "quality": {
+              "psnr": 0.0,
+              "ssim": 0.0,
+              "edge_preservation": 0.0,
+              "texture_consistency": 0.0
+            }
+          },
+          "error": null
+        }
+      },
+      "quality": {
+        "total_time_s": 6.303785415999755
+      },
+      "metrics": {
+        "processed": 3,
+        "errors": 0,
+        "stages": {}
+      },
+      "timestamp": 1757570821.7244601,
+      "input": "/var/folders/_5/yxm6dd5s3pjbmxmp6g3x1xgc0000gn/T/verif_pdf_10crpq6u/page_001.png",
+      "masked_output": "debug_output/verification/gateway_run/20250911_113652/page_001_masked.png"
+    },
+    {
+      "image_id": "page_002",
+      "stages": {
+        "preprocess": {
+          "name": "preprocess",
+          "duration_s": 0.006175749999783875,
+          "result": {
+            "orig_shape": [
+              1685,
+              1191
+            ],
+            "processed_shape": [
+              1685,
+              1685,
+              3
+            ]
+          },
+          "error": null
+        },
+        "text_detection": {
+          "name": "text_detection",
+          "duration_s": 5.630721084000015,
+          "result": {
+            "detected": 1,
+            "accepted": 1,
+            "rejected": 0
+          },
+          "error": null
+        },
+        "phi_classification": {
+          "name": "phi_classification",
+          "duration_s": 0.010351916000217898,
+          "result": {
+            "phi_count": 7,
+            "used_presidio": false,
+            "shadow_mode": false
+          },
+          "error": null
+        },
+        "masking": {
+          "name": "masking",
+          "duration_s": 0.25859824999997727,
+          "result": {
+            "method": "blackbox",
+            "quality": {
+              "psnr": 0.0,
+              "ssim": 0.0,
+              "edge_preservation": 0.0,
+              "texture_consistency": 0.0
+            }
+          },
+          "error": null
+        }
+      },
+      "quality": {
+        "total_time_s": 5.923946459000035
+      },
+      "metrics": {
+        "processed": 3,
+        "errors": 0,
+        "stages": {}
+      },
+      "timestamp": 1757570827.650045,
+      "input": "/var/folders/_5/yxm6dd5s3pjbmxmp6g3x1xgc0000gn/T/verif_pdf_10crpq6u/page_002.png",
+      "masked_output": "debug_output/verification/gateway_run/20250911_113652/page_002_masked.png"
+    },
+    {
+      "image_id": "page_003",
+      "stages": {
+        "preprocess": {
+          "name": "preprocess",
+          "duration_s": 0.006749416000275232,
+          "result": {
+            "orig_shape": [
+              1685,
+              1191
+            ],
+            "processed_shape": [
+              1685,
+              1685,
+              3
+            ],
+            "anonymized_text": "Diagnosis:\nInvasive ducta\nTumor cells a\nMargins: Not\nRecommenda\nPathologist:\nFacility: Univen"
+          },
+          "error": null
+        },
+        "text_detection": {
+          "name": "text_detection",
+          "duration_s": 5.117840834000162,
+          "result": {
+            "detected": 1,
+            "accepted": 1,
+            "rejected": 0
+          },
+          "error": null
+        },
+        "phi_classification": {
+          "name": "phi_classification",
+          "duration_s": 0.00539741700004015,
+          "result": {
+            "phi_count": 0,
+            "used_presidio": false,
+            "shadow_mode": false
+          },
+          "error": null
+        },
+        "masking": {
+          "name": "masking",
+          "duration_s": 0.2634507500001746,
+          "result": {
+            "method": "blackbox",
+            "quality": {
+              "psnr": 0.0,
+              "ssim": 0.0,
+              "edge_preservation": 0.0,
+              "texture_consistency": 0.0
+            }
+          },
+          "error": null
+        }
+      },
+      "quality": {
+        "total_time_s": 5.412417500000174
+      },
+      "metrics": {
+        "processed": 3,
+        "errors": 0,
+        "stages": {}
+      },
+      "timestamp": 1757570833.0638669,
+      "input": "/var/folders/_5/yxm6dd5s3pjbmxmp6g3x1xgc0000gn/T/verif_pdf_10crpq6u/page_003.png",
+      "masked_output": "debug_output/verification/gateway_run/20250911_113652/page_003_masked.png"
+    }
+  ]
+}

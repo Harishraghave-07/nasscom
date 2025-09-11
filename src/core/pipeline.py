@@ -340,7 +340,13 @@ class ClinicalImageMaskingPipeline:
                         logger.exception("Failed to write output image %s", output_path)
 
             total_time = time.perf_counter() - overall_start
+            # include phi_regions for downstream verification/tests
+            try:
+                phi_list = phi_regions if isinstance(phi_regions, list) else []
+            except Exception:
+                phi_list = []
             report = self.generate_processing_report(image_id, {k: v.__dict__ for k, v in stage_results.items()}, {"total_time_s": total_time})
+            report["phi_regions"] = phi_list
             self.metrics["processed"] += 1
             return report
 
@@ -416,7 +422,7 @@ class ClinicalImageMaskingPipeline:
                 regions = detector.detect_text_regions(image)
                 # If the mock detector implements its own filtering, use it.
                 if hasattr(detector, "filter_by_confidence"):
-                    accepted, rejected = detector.filter_by_confidence(regions, self.config.ocr.confidence_threshold)
+                    accepted, rejected = detector.filter_by_confidence(regions, self.config.ocr.confidence_threshold, slack=float(self.config.ocr.confidence_slack))
                 else:
                     # default: accept regions with confidence >= threshold
                     accepted = [r for r in regions if r.get("confidence", 1.0) >= self.config.ocr.confidence_threshold]
@@ -426,7 +432,28 @@ class ClinicalImageMaskingPipeline:
         else:
             regions = self.ocr.detect_text_regions(image)
             # filter using the OCR component's filter method
-            accepted, rejected = self.ocr.filter_by_confidence(regions, self.config.ocr.confidence_threshold)
+            accepted, rejected = self.ocr.filter_by_confidence(regions, self.config.ocr.confidence_threshold, slack=float(self.config.ocr.confidence_slack))
+            # If no regions passed the coarse region-level threshold but OCR can
+            # provide word-level boxes with higher confidence, accept regions
+            # that contain any high-confidence word boxes so we can map PHI to
+            # precise word-level bboxes downstream.
+            if (not accepted) and regions:
+                try:
+                    enriched = self.ocr.extract_text_content(image, regions)
+                    for er in enriched:
+                        wboxes = er.get("word_boxes") or []
+                        for w in wboxes:
+                            try:
+                                if float(w.get("confidence", 0.0)) >= float(self.config.ocr.confidence_threshold):
+                                    accepted.append(er)
+                                    break
+                            except Exception:
+                                continue
+                    # ensure rejected list reflects remaining
+                    rejected = [r for r in enriched if r not in accepted]
+                except Exception:
+                    # if enrichment fails, keep original accepted/rejected
+                    logger.exception("Failed to enrich OCR regions for word-level acceptance")
         det_meta = {"detected": len(regions), "accepted": len(accepted), "rejected": len(rejected)}
         return accepted, det_meta
 
@@ -445,6 +472,58 @@ class ClinicalImageMaskingPipeline:
         for r in text_regions:
             t = r.get("text", "")
 
+            def _normalize_text(s: str) -> str:
+                return re.sub(r"\s+", " ", (s or "")).strip().lower()
+
+            def _union_bbox(box_list: List[Tuple[int, int, int, int]]) -> Optional[List[int]]:
+                if not box_list:
+                    return None
+                xs1 = [int(b[0]) for b in box_list]
+                ys1 = [int(b[1]) for b in box_list]
+                xs2 = [int(b[2]) for b in box_list]
+                ys2 = [int(b[3]) for b in box_list]
+                return [min(xs1), min(ys1), max(xs2), max(ys2)]
+
+            def _find_bbox_from_word_boxes(region: Dict, detected_text: str) -> Optional[List[int]]:
+                # prefer exact or substring matches against per-word boxes if available
+                if not detected_text:
+                    return None
+                norm_det = _normalize_text(detected_text)
+                word_boxes = region.get("word_boxes") or []
+                # prefer merged_word_regions if available
+                word_boxes = region.get("merged_word_regions") or word_boxes
+                if not word_boxes:
+                    return None
+
+                # try exact / single-word matches first
+                for w in word_boxes:
+                    wtext = _normalize_text(w.get("text", ""))
+                    if not wtext:
+                        continue
+                    if norm_det == wtext or norm_det in wtext or wtext in norm_det:
+                        return list(map(int, w.get("bbox", []))) if w.get("bbox") else None
+
+                # try multi-word contiguous sequences
+                n = len(word_boxes)
+                texts = [_normalize_text(w.get("text", "")) for w in word_boxes]
+                for i in range(n):
+                    if not texts[i]:
+                        continue
+                    concat = texts[i]
+                    boxes = [word_boxes[i].get("bbox")]
+                    if norm_det == concat or norm_det in concat or concat in norm_det:
+                        return _union_bbox([b for b in boxes if b])
+                    for j in range(i + 1, n):
+                        if not texts[j]:
+                            continue
+                        concat = concat + " " + texts[j]
+                        boxes.append(word_boxes[j].get("bbox"))
+                        if norm_det == concat or norm_det in concat or concat in norm_det:
+                            return _union_bbox([b for b in boxes if b])
+
+                return None
+
+
             # Legacy (current) detector always runs to produce authoritative output
             try:
                 legacy_detections = self.phi.detect_phi_in_text(t, {"surrounding_text": context.get("surrounding_text", "")})
@@ -452,9 +531,35 @@ class ClinicalImageMaskingPipeline:
                 self.logger.exception("Legacy PHI classifier failed for region=%s", r.get("bbox"))
                 legacy_detections = []
 
+            # Before attempting to map detections to word-level boxes, try to
+            # merge adjacent OCR word boxes that likely compose multi-word PHI
+            # phrases. We use detected PHI texts as candidate phrases to match
+            # against concatenations of adjacent word tokens.
+            try:
+                from src.ocr.text_detector import merge_adjacent_regions
+
+                # build list of candidate PHI phrases from the legacy detector
+                candidate_phis = [d.get("text") or d.get("entity") or d.get("phrase") or "" for d in legacy_detections]
+                # also include presidio if available (we'll merge again later when presidio runs)
+                # only attempt merging when word_boxes exist
+                word_boxes = r.get("word_boxes") or []
+                if word_boxes and candidate_phis:
+                    # convert word_boxes into region-like dicts
+                    word_regions = [{"text": w.get("text", ""), "bbox": w.get("bbox"), "confidence": w.get("confidence", 0.0)} for w in word_boxes]
+                    merged = merge_adjacent_regions(word_regions, candidate_phis, fuzz_threshold=int(self.config.ocr.fuzz_threshold))
+                    # if merges occurred, replace or augment region's word_boxes
+                    if merged and len(merged) != len(word_regions):
+                        # store merged word_regions for mapping
+                        r["merged_word_regions"] = merged
+            except Exception:
+                self.logger.debug("merge_adjacent_regions not available or failed for region=%s", r.get("bbox"))
+
             # attach bbox and record
             for d in legacy_detections:
-                d["bbox"] = r.get("bbox")
+                # try to map detection to word-level bbox when possible
+                det_text = d.get("text") or d.get("entity") or d.get("phrase") or ""
+                mapped = _find_bbox_from_word_boxes(r, det_text)
+                d["bbox"] = mapped or r.get("bbox")
             legacy_report["detections"].extend(legacy_detections)
 
             # If canary enabled, run Presidio too (either shadow or active)
@@ -466,7 +571,9 @@ class ClinicalImageMaskingPipeline:
                     analyzer = get_analyzer()
                     presidio_detections = analyzer.detect_phi_in_text(t, {"surrounding_text": context.get("surrounding_text", "")})
                     for d in presidio_detections:
-                        d["bbox"] = r.get("bbox")
+                        det_text = d.get("text") or d.get("entity_type") or d.get("entity") or ""
+                        mapped = _find_bbox_from_word_boxes(r, det_text)
+                        d["bbox"] = mapped or r.get("bbox")
                     presidio_report["detections"].extend(presidio_detections)
                 except Exception:
                     self.logger.exception("Presidio analyzer failed for region=%s", r.get("bbox"))
@@ -494,9 +601,21 @@ class ClinicalImageMaskingPipeline:
             except Exception:
                 self.logger.exception("Failed to write shadow audit for doc=%s", context.get("image_id"))
 
+        # Map detections to exact text regions when possible for precise masking
+        try:
+            from src.ocr.text_detector import map_phi_to_exact_regions
+
+            # text_regions is the input list of regions; build a flat set from regions
+            text_regions = text_regions or []
+            mapped = map_phi_to_exact_regions(classified, text_regions)
+            final_classified = mapped if mapped else classified
+        except Exception:
+            self.logger.debug("map_phi_to_exact_regions not available or failed; using raw detections")
+            final_classified = classified
+
         # log summary of decision
-        self.logger.info("PHI classification: used_presidio=%s shadow_mode=%s detections=%d", use_presidio, shadow_mode, len(classified))
-        return classified, compliance
+        self.logger.info("PHI classification: used_presidio=%s shadow_mode=%s detections=%d", use_presidio, shadow_mode, len(final_classified))
+        return final_classified, compliance
 
     def stage_4_masking(self, image: np.ndarray, phi_regions: List[Dict], metadata: Dict) -> Tuple[np.ndarray, Dict]:
         # select inpainter (real or mock)
@@ -509,82 +628,24 @@ class ClinicalImageMaskingPipeline:
                 used_mock = True
             else:
                 raise RuntimeError("Inpainter not initialized")
-
-        # adapt expansions and perform inpainting or blackbox redaction
+        # Delegate to unified masking stage for a single, authoritative flow
         try:
-            phi_regions = inpainter.adaptive_mask_expansion(phi_regions, image)
-            # If config requests blackbox redaction, draw solid black rects over bboxes
-            style = getattr(self.config.mask, "redaction_style", "inpaint")
-            if style in ("blackbox", "blackbox_merge"):
-                out = image.copy()
-                try:
-                    import cv2 as _cv2
-
-                    if style == "blackbox_merge":
-                        # compute merged bbox
-                        xs = []
-                        ys = []
-                        for r in phi_regions:
-                            try:
-                                x1, y1, x2, y2 = map(int, r.get("bbox", (0, 0, 0, 0)))
-                                xs.extend([x1, x2])
-                                ys.extend([y1, y2])
-                            except Exception:
-                                continue
-                        if xs and ys:
-                            pad = int(getattr(self.config.mask, "blackbox_padding_pixels", 5))
-                            x1, x2 = max(0, min(xs) - pad), min(out.shape[1], max(xs) + pad)
-                            y1, y2 = max(0, min(ys) - pad), min(out.shape[0], max(ys) + pad)
-                            _cv2.rectangle(out, (x1, y1), (x2, y2), (0, 0, 0), thickness=-1)
-                    else:
-                        for r in phi_regions:
-                            try:
-                                x1, y1, x2, y2 = map(int, r.get("bbox", (0, 0, 0, 0)))
-                                _cv2.rectangle(out, (x1, y1), (x2, y2), (0, 0, 0), thickness=-1)
-                            except Exception:
-                                continue
-                except Exception:
-                    # fallback to numpy fill for either mode
-                    if style == "blackbox_merge":
-                        xs = []
-                        ys = []
-                        for r in phi_regions:
-                            try:
-                                x1, y1, x2, y2 = map(int, r.get("bbox", (0, 0, 0, 0)))
-                                xs.extend([x1, x2])
-                                ys.extend([y1, y2])
-                            except Exception:
-                                continue
-                        if xs and ys:
-                            pad = int(getattr(self.config.mask, "blackbox_padding_pixels", 5))
-                            x1, x2 = max(0, min(xs) - pad), min(out.shape[1], max(xs) + pad)
-                            y1, y2 = max(0, min(ys) - pad), min(out.shape[0], max(ys) + pad)
-                            out[y1:y2, x1:x2] = 0
-                    else:
-                        for r in phi_regions:
-                            try:
-                                x1, y1, x2, y2 = map(int, r.get("bbox", (0, 0, 0, 0)))
-                                out[y1:y2, x1:x2] = 0
-                            except Exception:
-                                continue
-                quality = getattr(inpainter, "validate_masking_quality", lambda o, i, m: {})(image, out, None)
-                if used_mock:
-                    quality = {**quality, "used_mock_inpainter": True}
-                return out, {"method": style, "quality": quality}
-
-            # default inpainting flow
-            mask = inpainter.create_mask_from_regions(image.shape, phi_regions)
-            method = getattr(inpainter, "smart_inpainting_selection", lambda im, m: self.config.mask.inpainting_method)(image, mask)
-            inpainted = inpainter.apply_inpainting(image, mask, method=method)
-            enhanced = getattr(inpainter, "enhance_inpainted_regions", lambda o, i, m: i)(image, inpainted, mask)
-            quality = getattr(inpainter, "validate_masking_quality", lambda o, i, m: {})(image, enhanced, mask)
+            masked_img, meta = inpainter.unified_masking_stage(
+                image,
+                phi_regions,
+                style=getattr(self.config.mask, "redaction_style", None),
+                merge_adjacent=True,
+                padding=getattr(self.config.mask, "surgical_padding_pixels", None),
+                inpaint_method=getattr(self.config.mask, "inpainting_method", None),
+                fallback_to_blackbox=True,
+            )
             if used_mock:
-                # annotate report to indicate mock was used
-                quality = {**quality, "used_mock_inpainter": True}
-            return enhanced, {"method": method, "quality": quality}
+                meta = {**meta, "used_mock_inpainter": True}
+            return masked_img, meta
         except Exception:
-            logger.exception("Masking stage failed")
-            raise
+            logger.exception("Unified masking stage failed in pipeline; applying conservative fallback")
+            self.metrics["errors"] += 1
+            return self.handle_masking_errors(Exception("unified_masking_failed"), image, phi_regions), {"method": "fallback_blackbox", "error": True}
 
     # ---------------- error handlers ----------------
     def handle_preprocessing_errors(self, error: Exception, image_path: str) -> Dict[str, Any]:

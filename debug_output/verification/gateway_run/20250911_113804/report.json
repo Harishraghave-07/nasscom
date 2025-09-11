@@ -1,0 +1,207 @@
+{
+  "input_pdf": "/Users/harishraghave/Downloads/nasscom/Highlighted PHI Details Emily_Dawson.pdf",
+  "reports": [
+    {
+      "image_id": "page_001",
+      "stages": {
+        "preprocess": {
+          "name": "preprocess",
+          "duration_s": 0.012376958000004379,
+          "result": {
+            "orig_shape": [
+              1685,
+              1191
+            ],
+            "processed_shape": [
+              1685,
+              1685,
+              3
+            ]
+          },
+          "error": null
+        },
+        "text_detection": {
+          "name": "text_detection",
+          "duration_s": 5.711127999999917,
+          "result": {
+            "detected": 1,
+            "accepted": 1,
+            "rejected": 0
+          },
+          "error": null
+        },
+        "phi_classification": {
+          "name": "phi_classification",
+          "duration_s": 0.013287291999859008,
+          "result": {
+            "phi_count": 2,
+            "used_presidio": false,
+            "shadow_mode": false
+          },
+          "error": null
+        },
+        "masking": {
+          "name": "masking",
+          "duration_s": 0.2831500000002052,
+          "result": {
+            "method": "blackbox",
+            "quality": {
+              "psnr": 25.199434280395508,
+              "ssim": 0.9952896905010538,
+              "edge_preservation": 1147.0,
+              "texture_consistency": 0.9940962791442871,
+              "notes": []
+            }
+          },
+          "error": null
+        }
+      },
+      "quality": {
+        "total_time_s": 6.1033368329999576
+      },
+      "metrics": {
+        "processed": 3,
+        "errors": 0,
+        "stages": {}
+      },
+      "timestamp": 1757570893.707318,
+      "input": "/var/folders/_5/yxm6dd5s3pjbmxmp6g3x1xgc0000gn/T/verif_pdf_3qhg9h89/page_001.png",
+      "masked_output": "debug_output/verification/gateway_run/20250911_113804/page_001_masked.png"
+    },
+    {
+      "image_id": "page_002",
+      "stages": {
+        "preprocess": {
+          "name": "preprocess",
+          "duration_s": 0.006287666999924113,
+          "result": {
+            "orig_shape": [
+              1685,
+              1191
+            ],
+            "processed_shape": [
+              1685,
+              1685,
+              3
+            ]
+          },
+          "error": null
+        },
+        "text_detection": {
+          "name": "text_detection",
+          "duration_s": 5.473798791999798,
+          "result": {
+            "detected": 1,
+            "accepted": 1,
+            "rejected": 0
+          },
+          "error": null
+        },
+        "phi_classification": {
+          "name": "phi_classification",
+          "duration_s": 0.00998733300002641,
+          "result": {
+            "phi_count": 7,
+            "used_presidio": false,
+            "shadow_mode": false
+          },
+          "error": null
+        },
+        "masking": {
+          "name": "masking",
+          "duration_s": 0.277486792000218,
+          "result": {
+            "method": "blackbox",
+            "quality": {
+              "psnr": 17.71306037902832,
+              "ssim": 0.9753725794641612,
+              "edge_preservation": 1073.5,
+              "texture_consistency": 0.9666181802749634,
+              "notes": []
+            }
+          },
+          "error": null
+        }
+      },
+      "quality": {
+        "total_time_s": 5.785625457999686
+      },
+      "metrics": {
+        "processed": 3,
+        "errors": 0,
+        "stages": {}
+      },
+      "timestamp": 1757570899.4947991,
+      "input": "/var/folders/_5/yxm6dd5s3pjbmxmp6g3x1xgc0000gn/T/verif_pdf_3qhg9h89/page_002.png",
+      "masked_output": "debug_output/verification/gateway_run/20250911_113804/page_002_masked.png"
+    },
+    {
+      "image_id": "page_003",
+      "stages": {
+        "preprocess": {
+          "name": "preprocess",
+          "duration_s": 0.006130209000275499,
+          "result": {
+            "orig_shape": [
+              1685,
+              1191
+            ],
+            "processed_shape": [
+              1685,
+              1685,
+              3
+            ],
+            "anonymized_text": "Diagnosis:\nInvasive ducta\nTumor cells a\nMargins: Not\nRecommenda\nPathologist:\nFacility: Univen"
+          },
+          "error": null
+        },
+        "text_detection": {
+          "name": "text_detection",
+          "duration_s": 4.9482625840000765,
+          "result": {
+            "detected": 1,
+            "accepted": 1,
+            "rejected": 0
+          },
+          "error": null
+        },
+        "phi_classification": {
+          "name": "phi_classification",
+          "duration_s": 0.00676645900011863,
+          "result": {
+            "phi_count": 0,
+            "used_presidio": false,
+            "shadow_mode": false
+          },
+          "error": null
+        },
+        "masking": {
+          "name": "masking",
+          "duration_s": 0.28079591699997763,
+          "result": {
+            "method": "blackbox",
+            "quality": {
+              "psnr": Infinity,
+              "ssim": 1.0,
+              "edge_preservation": 1.0,
+              "texture_consistency": 1.0,
+              "notes": []
+            }
+          },
+          "error": null
+        }
+      },
+      "quality": {
+        "total_time_s": 5.261529791000157
+      },
+      "metrics": {
+        "processed": 3,
+        "errors": 0,
+        "stages": {}
+      },
+      "timestamp": 1757570904.7578251,
+      "input": "/var/folders/_5/yxm6dd5s3pjbmxmp6g3x1xgc0000gn/T/verif_pdf_3qhg9h89/page_003.png",
+      "masked_output": "debug_output/verification/gateway_run/20250911_113804/page_003_masked.png"
+    }
+  ]
+}

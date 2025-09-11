@@ -26,6 +26,7 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import numpy as np
+import re
 
 try:
     import cv2
@@ -33,6 +34,7 @@ except Exception:
     cv2 = None  # optional; some environments may not have OpenCV
 
 from src.core.config import OCRConfig, SETTINGS
+from difflib import SequenceMatcher
 
 logger = logging.getLogger(__name__)
 
@@ -197,6 +199,55 @@ class TextDetector:
         # Lock for updating performance counters
         self._perf_lock = threading.Lock()
 
+    def filter_by_confidence(self, detections: List[Dict[str, Any]], threshold: float, slack: Optional[float] = None) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+        """Split detections into accepted and rejected using thresholding.
+
+        Uses adaptive thresholding heuristics: short text receives higher min
+        confidence requirements because of increased ambiguity.
+        """
+        accepted = []
+        rejected = []
+        # Determine slack: prefer explicit arg, otherwise use config default
+        if slack is None:
+            try:
+                slack = float(getattr(self.config, "confidence_slack", 0.1))
+            except Exception:
+                slack = 0.1
+        for d in detections:
+            txt = d.get("text", "")
+            conf = float(d.get("confidence", 0.0))
+            # adaptive threshold: shorter texts need higher conf
+            length = len(txt.strip())
+            adapt = 0.0
+            if length <= 3:
+                adapt = 0.15
+            elif length <= 6:
+                adapt = 0.08
+            adj_threshold = min(0.99, threshold + adapt)
+            # allow slack below adjusted threshold
+            effective_thresh = max(0.0, adj_threshold - float(slack))
+            if conf >= effective_thresh:
+                accepted.append(d)
+            else:
+                d["rejection_reason"] = f"confidence {conf:.3f} < {effective_thresh:.3f} (adj {adj_threshold:.3f}, slack {slack:.3f})"
+                rejected.append(d)
+
+        # Audit filter decisions
+        try:
+            self.audit_logger.info(json.dumps({"event": "filter_by_confidence", "accepted": len(accepted), "rejected": len(rejected)}))
+        except Exception:
+            logger.debug("Failed to write audit log for filter_by_confidence")
+
+        # If no regions accepted, keep the highest-confidence region as a fallback
+        if not accepted and detections:
+            best = max(detections, key=lambda x: float(x.get("confidence", 0.0)))
+            # remove best from rejected if present
+            rejected = [r for r in rejected if r is not best]
+            if best not in accepted:
+                accepted.append(best)
+
+        return accepted, rejected
+
     # ------------------------- detection pipeline -------------------------
     def detect_text_regions(self, image: np.ndarray) -> List[Dict[str, Any]]:
         """Detect text regions using EasyOCR and return raw detections.
@@ -256,8 +307,87 @@ class TextDetector:
             else:
                 regions.append({"bbox": bbox, "confidence": float(s), "low_confidence": False, "box_points": box})
 
-        # Merge overlapping detections
-        merged = self.merge_overlapping_regions([r for r in regions if not r.get("low_confidence")])
+        # Merge overlapping detections (robust; fall back to raw regions on failure)
+        try:
+            non_low = [r for r in regions if not r.get("low_confidence")]
+            merged = self.merge_overlapping_regions(non_low, overlap_thresh=0.5)
+        except Exception:
+            logger.exception("merge_overlapping_regions failed; falling back to raw regions")
+            merged = [r for r in regions if not r.get("low_confidence")]
+
+        # Debug export: write raw and merged region JSON for inspection.
+        # Some OCR return objects may contain numpy types or other non-JSON
+        # serializables; sanitize recursively and write atomically to avoid
+        # partial/truncated output files.
+        try:
+            # derive a simple page index based on images_processed counter
+            page_idx = int(self.performance.get("images_processed", 0)) + 1
+            outdir = "debug_output"
+            import os, tempfile
+
+            os.makedirs(outdir, exist_ok=True)
+
+            def _sanitize(obj):
+                # primitives
+                if obj is None:
+                    return None
+                if isinstance(obj, (str, bool)):
+                    return obj
+                if isinstance(obj, (int, float)):
+                    # convert numpy scalars to native
+                    try:
+                        return obj.item()  # type: ignore
+                    except Exception:
+                        return obj
+                # numpy arrays
+                try:
+                    import numpy as _np
+
+                    if isinstance(obj, _np.ndarray):
+                        return _np.asarray(obj).tolist()
+                except Exception:
+                    pass
+                # list/tuple
+                if isinstance(obj, (list, tuple)):
+                    return [_sanitize(v) for v in obj]
+                # dict
+                if isinstance(obj, dict):
+                    return {str(k): _sanitize(v) for k, v in obj.items()}
+                # objects with __dict__
+                if hasattr(obj, "__dict__"):
+                    try:
+                        return _sanitize(vars(obj))
+                    except Exception:
+                        return repr(obj)
+                # fallback to string representation
+                try:
+                    return str(obj)
+                except Exception:
+                    return repr(obj)
+
+            raw_s = {"regions": [_sanitize(r) for r in regions]}
+            merged_s = {"merged": [_sanitize(r) for r in merged]}
+
+            raw_path = os.path.join(outdir, f"ocr_regions_page_{page_idx}.json")
+            merged_path = os.path.join(outdir, f"merged_regions_page_{page_idx}.json")
+
+            # write atomically via tempfile then replace
+            for data, path in ((raw_s, raw_path), (merged_s, merged_path)):
+                fd, tmp = tempfile.mkstemp(prefix="tmpocr", dir=outdir)
+                try:
+                    with os.fdopen(fd, "w", encoding="utf-8") as fh:
+                        json.dump(data, fh, indent=2, ensure_ascii=False)
+                    os.replace(tmp, path)
+                finally:
+                    if os.path.exists(tmp):
+                        try:
+                            os.remove(tmp)
+                        except Exception:
+                            pass
+
+            logger.debug("Wrote OCR debug files %s and %s", raw_path, merged_path)
+        except Exception:
+            logger.exception("Failed to write OCR debug artifacts")
 
         # Add low-confidence entries back as separate entries (they're flagged)
         low_conf = [r for r in regions if r.get("low_confidence")]
@@ -291,22 +421,52 @@ class TextDetector:
                 x1, y1, x2, y2 = r["bbox"]
                 crop = image[y1:y2, x1:x2]
                 # EasyOCR recognizes on the full crop
-                ocr_out = self.reader.readtext(crop, detail=1)
-                # ocr_out: list of (bbox, text, confidence)
+                # Request word-level (non-paragraph) output so we get one bbox per
+                # word/small phrase instead of grouped paragraph boxes. This uses
+                # EasyOCR's `paragraph=False` flag to preserve granular boxes.
+                # Assumption: EasyOCR version in use supports `paragraph` kwarg.
+                try:
+                    ocr_out = self.reader.readtext(crop, detail=1, paragraph=False)
+                except TypeError:
+                    # Older easyocr versions may not accept `paragraph`; fall back
+                    # to default behavior.
+                    ocr_out = self.reader.readtext(crop, detail=1)
+                # ocr_out: list of (bbox, text, confidence) where bbox coords are
+                # relative to the cropped image. Convert each word bbox to full-image
+                # coordinates so downstream mapping/masking can operate precisely.
                 texts = []
                 confs = []
+                word_boxes: List[Dict[str, Any]] = []
                 for item in ocr_out:
-                    _, txt, conf = item
+                    bbox_pts, txt, conf = item
                     # normalize whitespace
                     txt = " ".join(str(txt).split())
                     texts.append(txt)
                     confs.append(float(conf))
 
+                    # compute bbox from bbox_pts (list of 4 points) relative to crop
+                    try:
+                        xs = [int(p[0]) for p in bbox_pts]
+                        ys = [int(p[1]) for p in bbox_pts]
+                        wx1, wx2 = min(xs), max(xs)
+                        wy1, wy2 = min(ys), max(ys)
+                        # map to full-image coordinates by offsetting with region origin
+                        abs_box = (int(x1 + wx1), int(y1 + wy1), int(x1 + wx2), int(y1 + wy2))
+                    except Exception:
+                        abs_box = (int(x1), int(y1), int(x2), int(y2))
+
+                    word_boxes.append({"text": txt, "bbox": abs_box, "confidence": float(conf)})
+
                 combined_text = "\n".join(texts)
                 avg_conf = float(sum(confs) / len(confs)) if confs else 0.0
 
                 r_out = dict(r)
-                r_out.update({"text": combined_text, "confidence": avg_conf, "ocr_lines": texts})
+                r_out.update({
+                    "text": combined_text,
+                    "confidence": avg_conf,
+                    "ocr_lines": texts,
+                    "word_boxes": word_boxes,
+                })
                 results.append(r_out)
             except Exception:
                 logger.exception("Failed to OCR region")
@@ -368,7 +528,290 @@ class TextDetector:
 
         return processed
 
-    def filter_by_confidence(self, detections: List[Dict[str, Any]], threshold: float) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+
+def split_regions_by_words(regions: List[Dict[str, Any]], max_words_per_region: int = 3) -> List[Dict[str, Any]]:
+    """Split large text regions into smaller line- or word-level regions.
+
+    Strategy:
+    - If a region already contains `word_boxes`, prefer and return those (annotated).
+    - Otherwise split by lines. If a line has more than `max_words_per_region`
+      words, split that line into individual word regions by approximating
+      horizontal slices (uniform width per word). Vertical positions are
+      approximated by equally dividing the region height across lines.
+
+    This is a heuristic helper for cases where OCR returns a large paragraph
+    bbox but downstream mapping/masking expects tighter boxes.
+    """
+    out: List[Dict[str, Any]] = []
+    for r in regions:
+        text = (r.get("text") or "").strip()
+        if not text:
+            # keep region as-is if no text
+            out.append(r)
+            continue
+
+        # If accurate per-word boxes already exist, prefer them
+        word_boxes = r.get("word_boxes") or []
+        if word_boxes:
+            for w in word_boxes:
+                try:
+                    bbox = [int(x) for x in w.get("bbox", r.get("bbox", [0, 0, 0, 0]))]
+                except Exception:
+                    bbox = list(r.get("bbox", [0, 0, 0, 0]))
+                out.append({
+                    "text": w.get("text", ""),
+                    "bbox": bbox,
+                    "confidence": float(w.get("confidence", r.get("confidence", 0.0))),
+                    "region_type": r.get("region_type", "text"),
+                    "split_from": text,
+                })
+            continue
+
+        # fallback heuristic: split by lines first
+        lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
+        if not lines:
+            lines = [text]
+
+        x1, y1, x2, y2 = r.get("bbox", (0, 0, 0, 0))
+        try:
+            x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
+        except Exception:
+            x1, y1, x2, y2 = 0, 0, 0, 0
+
+        region_width = max(1, x2 - x1)
+        region_height = max(1, y2 - y1)
+
+        for li, line in enumerate(lines):
+            words = [w for w in line.split() if w]
+            # compute vertical slice for this line
+            line_h = int(region_height / len(lines))
+            ly1 = y1 + li * line_h
+            ly2 = y1 + (li + 1) * line_h if li < len(lines) - 1 else y2
+
+            if len(words) == 0:
+                continue
+
+            if len(words) <= max_words_per_region:
+                # keep the whole line as one region, use full width
+                out.append({
+                    "text": line,
+                    "bbox": [x1, ly1, x2, ly2],
+                    "confidence": float(r.get("confidence", 0.0)),
+                    "region_type": r.get("region_type", "text"),
+                    "split_from": text,
+                })
+            else:
+                # split into word boxes by uniformly slicing the width
+                word_width = region_width / len(words)
+                for i, wtext in enumerate(words):
+                    wx1 = int(x1 + i * word_width)
+                    wx2 = int(x1 + (i + 1) * word_width) if i < len(words) - 1 else x2
+                    out.append({
+                        "text": wtext,
+                        "bbox": [wx1, ly1, wx2, ly2],
+                        "confidence": float(r.get("confidence", 0.0)),
+                        "region_type": r.get("region_type", "text"),
+                        "split_from": text,
+                    })
+
+    return out
+
+
+def _fuzzy_ratio(a: str, b: str) -> int:
+    """Return a 0-100 similarity ratio between two strings.
+
+    Prefer fuzzywuzzy if available; otherwise use difflib.SequenceMatcher.
+    """
+    try:
+        # lazy import fuzzywuzzy if available
+        from fuzzywuzzy import fuzz  # type: ignore
+
+        return int(fuzz.token_sort_ratio(a, b))
+    except Exception:
+        # fallback to difflib ratio scaled to 0-100
+        if not a and not b:
+            return 100
+        try:
+            return int(SequenceMatcher(None, a, b).ratio() * 100)
+        except Exception:
+            return 0
+
+
+def merge_adjacent_regions(regions: List[Dict[str, Any]], phi_texts: List[str], fuzz_threshold: int = 80, horizontal_tolerance: int = 10) -> List[Dict[str, Any]]:
+    """Merge adjacent word-level OCR regions when their concatenation matches any PHI text.
+
+    Args:
+        regions: list of word-level regions (dicts with 'text' and 'bbox')
+        phi_texts: list of target PHI phrases to match against
+        fuzz_threshold: integer 0-100 controlling fuzzy match acceptance
+        horizontal_tolerance: pixels tolerance to consider words adjacent on same line
+
+    Returns:
+        New list of regions where matched adjacent sequences are merged into single region dicts.
+    """
+    if not regions or not phi_texts:
+        return regions
+
+    # normalize phi texts
+    norm_phis = [re.sub(r"\s+", " ", (p or "").strip()).lower() for p in phi_texts if p]
+
+    # sort regions by top-to-bottom then left-to-right
+    def _sort_key(r: Dict[str, Any]):
+        try:
+            x1, y1, x2, y2 = map(int, r.get("bbox", (0, 0, 0, 0)))
+        except Exception:
+            x1, y1 = 0, 0
+        return (y1, x1)
+
+    sorted_regs = sorted(regions, key=_sort_key)
+    used = [False] * len(sorted_regs)
+    out: List[Dict[str, Any]] = []
+
+    for i, r in enumerate(sorted_regs):
+        if used[i]:
+            continue
+        # begin candidate sequence
+        seq_indices = [i]
+        seq_texts = [ (r.get("text") or "").strip() ]
+        seq_boxes = [ list(map(int, r.get("bbox", [0,0,0,0]))) ]
+        used[i] = True
+
+        # attempt to grow to the right across adjacent tokens on same line
+        for j in range(i+1, len(sorted_regs)):
+            if used[j]:
+                continue
+            rj = sorted_regs[j]
+            try:
+                x1a, y1a, x2a, y2a = map(int, seq_boxes[-1])
+                x1b, y1b, x2b, y2b = map(int, rj.get("bbox", (0,0,0,0)))
+            except Exception:
+                break
+            # check vertical alignment (simple overlap / same line)
+            vert_overlap = min(y2a, y2b) - max(y1a, y1b)
+            min_h = min(max(1, y2a - y1a), max(1, y2b - y1b))
+            if vert_overlap < -horizontal_tolerance:
+                # too far vertically; likely next line
+                break
+            # check horizontal adjacency: next box should start near or after previous end
+            if x1b < x2a - horizontal_tolerance:
+                # overlapping backwards; skip as not a forward neighbor
+                continue
+            # candidate concatenation: current sequence + this candidate token
+            candidate_text = " ".join(seq_texts + [ (rj.get("text") or "").strip() ])
+            # normalize
+            cand_norm = re.sub(r"\s+", " ", candidate_text.strip()).lower()
+            # test against all phi texts using fuzzy match
+            matched = False
+            for phi in norm_phis:
+                score = _fuzzy_ratio(cand_norm, phi)
+                if score >= fuzz_threshold:
+                    # accept merge: extend sequences
+                    seq_indices.append(j)
+                    seq_texts.append((rj.get("text") or "").strip())
+                    seq_boxes.append(list(map(int, rj.get("bbox", [0,0,0,0]))))
+                    used[j] = True
+                    matched = True
+                    break
+            if not matched:
+                # not matched for this extension; do not include rj; stop growing
+                break
+            else:
+                # we matched a PHI phrase with current concatenation; stop growing further
+                break
+
+        # build merged region from seq_texts and seq_boxes
+        if len(seq_boxes) == 1:
+            out.append(r)
+        else:
+            xs1 = [b[0] for b in seq_boxes]
+            ys1 = [b[1] for b in seq_boxes]
+            xs2 = [b[2] for b in seq_boxes]
+            ys2 = [b[3] for b in seq_boxes]
+            merged_bbox = [min(xs1), min(ys1), max(xs2), max(ys2)]
+            merged_text = re.sub(r"\s+", " ", " ".join([t for t in seq_texts if t]).strip())
+            # compute average confidence across merged indices
+            try:
+                confs = [float(sorted_regs[idx].get("confidence", 0.0)) for idx in seq_indices]
+                merged_conf = float(sum(confs) / max(1, len(confs)))
+            except Exception:
+                merged_conf = float(r.get("confidence", 0.0))
+            out.append({
+                "text": merged_text,
+                "bbox": merged_bbox,
+                "confidence": merged_conf,
+                "region_type": r.get("region_type", "text"),
+                "merged_from": [list(b) for b in seq_boxes],
+            })
+
+    return out
+
+
+def map_phi_to_exact_regions(phi_detections: List[Dict[str, Any]], text_regions: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Map phi detections (analyzer output) to exact text regions.
+
+    Heuristics:
+    - Prefer exact case-insensitive match between detection text and region text.
+    - If not exact, accept partial matches where region text is a substring
+      of the detection text (and length>2 to avoid one-letter false positives).
+    - If a detection contains multiple words, try to match each word to a
+      region and return one mapping per matched region.
+
+    Returns a list of phi_regions in the form: {bbox, entity_type, text, confidence}
+    """
+    out: List[Dict[str, Any]] = []
+    # build a normalized text index for quick lookup
+    indexed: List[Tuple[str, Dict[str, Any]]] = []
+    for r in text_regions:
+        rt = (r.get("text") or "").strip()
+        if not rt:
+            continue
+        indexed.append((rt.lower(), r))
+
+    for det in phi_detections:
+        phi_text = (det.get("text") or det.get("entity") or "").strip()
+        if not phi_text:
+            continue
+        ent = det.get("entity_type") or det.get("label") or det.get("type") or det.get("phi_type")
+        conf = float(det.get("score", det.get("confidence", det.get("confidence_score", 0.8))))
+        norm_phi = phi_text.lower()
+
+        # exact match
+        matched = False
+        for rt, r in indexed:
+            if norm_phi == rt:
+                out.append({"bbox": r.get("bbox"), "entity_type": ent, "text": r.get("text"), "confidence": conf})
+                matched = True
+        if matched:
+            continue
+
+        # try substring matches
+        for rt, r in indexed:
+            if len(rt) > 2 and rt in norm_phi:
+                out.append({"bbox": r.get("bbox"), "entity_type": ent, "text": r.get("text"), "confidence": conf})
+                matched = True
+        if matched:
+            continue
+
+        # split detection into words and try to match words individually
+        tokens = [t for t in phi_text.split() if t]
+        if tokens:
+            for token in tokens:
+                nt = token.strip().lower()
+                if not nt or len(nt) <= 1:
+                    continue
+                for rt, r in indexed:
+                    if rt == nt or (len(rt) > 2 and rt in nt) or (len(nt) > 2 and nt in rt):
+                        out.append({"bbox": r.get("bbox"), "entity_type": ent, "text": r.get("text"), "confidence": conf})
+                        matched = True
+        # If nothing matched, fall back to attaching the original detection bbox if present
+        if not matched:
+            orig_bbox = det.get("bbox")
+            if orig_bbox:
+                out.append({"bbox": orig_bbox, "entity_type": ent, "text": phi_text, "confidence": conf})
+
+    return out
+
+    def filter_by_confidence(self, detections: List[Dict[str, Any]], threshold: float, slack: Optional[float] = None) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
         """Split detections into accepted and rejected using thresholding.
 
         Uses adaptive thresholding heuristics: short text receives higher min
@@ -376,6 +819,12 @@ class TextDetector:
         """
         accepted = []
         rejected = []
+        # Determine slack: prefer explicit arg, otherwise use config default
+        if slack is None:
+            try:
+                slack = float(getattr(self.config, "confidence_slack", 0.1))
+            except Exception:
+                slack = 0.1
         for d in detections:
             txt = d.get("text", "")
             conf = float(d.get("confidence", 0.0))
@@ -387,10 +836,12 @@ class TextDetector:
             elif length <= 6:
                 adapt = 0.08
             adj_threshold = min(0.99, threshold + adapt)
-            if conf >= adj_threshold:
+            # allow slack below adjusted threshold
+            effective_thresh = max(0.0, adj_threshold - float(slack))
+            if conf >= effective_thresh:
                 accepted.append(d)
             else:
-                d["rejection_reason"] = f"confidence {conf:.3f} < {adj_threshold:.3f}"
+                d["rejection_reason"] = f"confidence {conf:.3f} < {effective_thresh:.3f} (adj {adj_threshold:.3f}, slack {slack:.3f})"
                 rejected.append(d)
 
         # Audit filter decisions
@@ -399,44 +850,88 @@ class TextDetector:
         except Exception:
             logger.debug("Failed to write audit log for filter_by_confidence")
 
+        # If no regions accepted, keep the highest-confidence region as a fallback
+        if not accepted and detections:
+            best = max(detections, key=lambda x: float(x.get("confidence", 0.0)))
+            # remove best from rejected if present
+            rejected = [r for r in rejected if r is not best]
+            if best not in accepted:
+                accepted.append(best)
+
         return accepted, rejected
 
     def merge_overlapping_regions(self, regions: List[Dict[str, Any]], iou_threshold: float = 0.3) -> List[Dict[str, Any]]:
-        """Merge overlapping bounding boxes preserving the highest-confidence text."""
+        """Merge overlapping bounding boxes preserving the highest-confidence text.
+
+        This implementation uses intersection-over-minimum-area (IoM) as the
+        overlap metric: inter_area / min(areaA, areaB). Regions with IoM >=
+        overlap_thresh are merged together. The merged bbox is the union of
+        merged boxes and the canonical text is taken from the highest
+        confidence member.
+        """
         if not regions:
             return []
+
+        def area(b):
+            return max(0, (b[2] - b[0])) * max(0, (b[3] - b[1]))
+
+        def iom(boxA, boxB):
+            # intersection over min area
+            xA = max(boxA[0], boxB[0])
+            yA = max(boxA[1], boxB[1])
+            xB = min(boxA[2], boxB[2])
+            yB = min(boxA[3], boxB[3])
+            interW = max(0, xB - xA)
+            interH = max(0, yB - yA)
+            interArea = interW * interH
+            minArea = min(area(boxA), area(boxB))
+            if minArea <= 0:
+                return 0.0
+            return float(interArea) / float(minArea)
 
         boxes = [tuple(r["bbox"]) for r in regions]
         scores = [float(r.get("confidence", 0.0)) for r in regions]
 
-        idxs = list(range(len(boxes)))
-        keep = []
-        while idxs:
-            current = idxs.pop(0)
-            cur_box = boxes[current]
-            cur_score = scores[current]
-            to_merge = [current]
-            remove = []
-            for other in idxs:
-                if _iou(cur_box, boxes[other]) >= iou_threshold:
-                    to_merge.append(other)
-                    remove.append(other)
-            # remove merged indices from idxs
-            idxs = [i for i in idxs if i not in remove]
+        used = [False] * len(boxes)
+        groups: List[List[int]] = []
 
-            # pick highest confidence region as canonical
-            best = max(to_merge, key=lambda i: scores[i])
-            merged = dict(regions[best])
-            # if more than one region, expand bbox to cover union
-            if len(to_merge) > 1:
-                xs = [b[0] for b in boxes] + [b[2] for b in boxes]
-                ys = [b[1] for b in boxes] + [b[3] for b in boxes]
-                merged_bbox = (min(xs), min(ys), max(xs), max(ys))
-                merged["bbox"] = merged_bbox
-                merged["merged_from"] = [regions[i].get("bbox") for i in to_merge]
-            keep.append(merged)
+        for i in range(len(boxes)):
+            if used[i]:
+                continue
+            group = [i]
+            used[i] = True
+            for j in range(i + 1, len(boxes)):
+                if used[j]:
+                    continue
+                try:
+                    if iom(boxes[i], boxes[j]) >= iou_threshold:
+                        group.append(j)
+                        used[j] = True
+                except Exception:
+                    continue
+            groups.append(group)
 
-        return keep
+        merged_results: List[Dict[str, Any]] = []
+        for grp in groups:
+            if not grp:
+                continue
+            if len(grp) == 1:
+                merged_results.append(dict(regions[grp[0]]))
+                continue
+            # choose canonical as highest confidence
+            best_idx = max(grp, key=lambda ii: scores[ii])
+            # union bbox
+            xs1 = [boxes[ii][0] for ii in grp]
+            ys1 = [boxes[ii][1] for ii in grp]
+            xs2 = [boxes[ii][2] for ii in grp]
+            ys2 = [boxes[ii][3] for ii in grp]
+            union_bbox = (min(xs1), min(ys1), max(xs2), max(ys2))
+            merged = dict(regions[best_idx])
+            merged["bbox"] = union_bbox
+            merged["merged_from"] = [regions[ii].get("bbox") for ii in grp]
+            merged_results.append(merged)
+
+        return merged_results
 
     def validate_detection_quality(self, image: np.ndarray, detections: List[Dict[str, Any]]) -> Dict[str, float]:
         """Return a quality report for detections on the image.
@@ -509,6 +1004,55 @@ class TextDetector:
         except Exception:
             logger.exception("Failed to fully process image %s", image_id)
             return []
+
+    def filter_by_confidence(self, detections: List[Dict[str, Any]], threshold: float, slack: Optional[float] = None) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+        """Split detections into accepted and rejected using thresholding.
+
+        Uses adaptive thresholding heuristics: short text receives higher min
+        confidence requirements because of increased ambiguity.
+        """
+        accepted = []
+        rejected = []
+        # Determine slack: prefer explicit arg, otherwise use config default
+        if slack is None:
+            try:
+                slack = float(getattr(self.config, "confidence_slack", 0.1))
+            except Exception:
+                slack = 0.1
+        for d in detections:
+            txt = d.get("text", "")
+            conf = float(d.get("confidence", 0.0))
+            # adaptive threshold: shorter texts need higher conf
+            length = len(txt.strip())
+            adapt = 0.0
+            if length <= 3:
+                adapt = 0.15
+            elif length <= 6:
+                adapt = 0.08
+            adj_threshold = min(0.99, threshold + adapt)
+            # allow slack below adjusted threshold
+            effective_thresh = max(0.0, adj_threshold - float(slack))
+            if conf >= effective_thresh:
+                accepted.append(d)
+            else:
+                d["rejection_reason"] = f"confidence {conf:.3f} < {effective_thresh:.3f} (adj {adj_threshold:.3f}, slack {slack:.3f})"
+                rejected.append(d)
+
+        # Audit filter decisions
+        try:
+            self.audit_logger.info(json.dumps({"event": "filter_by_confidence", "accepted": len(accepted), "rejected": len(rejected)}))
+        except Exception:
+            logger.debug("Failed to write audit log for filter_by_confidence")
+
+        # If no regions accepted, keep the highest-confidence region as a fallback
+        if not accepted and detections:
+            best = max(detections, key=lambda x: float(x.get("confidence", 0.0)))
+            # remove best from rejected if present
+            rejected = [r for r in rejected if r is not best]
+            if best not in accepted:
+                accepted.append(best)
+
+        return accepted, rejected
 
 
 # ------------------------- Clinical-specific utilities -------------------------

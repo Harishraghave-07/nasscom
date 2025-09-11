@@ -107,6 +107,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", help="Path to a PDF to verify")
     parser.add_argument("--force-blackbox", action="store_true", help="Force blackbox redaction style for debugging")
+    parser.add_argument("--surgical-mask", action="store_true", help="Enable surgical per-region masking (minimal black rects)")
     parser.add_argument("--debug", action="store_true", help="Enable debug logging")
     parser.add_argument("--auto-out", action="store_true", help="Use auto-generated output dir under debug_output")
     args = parser.parse_args()
@@ -123,6 +124,15 @@ def main():
             log.info("Overrode redaction style to blackbox for debugging")
         except Exception:
             log.exception("Failed to override SETTINGS for blackbox")
+
+    if args.surgical_mask:
+        try:
+            from src.core.config import SETTINGS
+
+            SETTINGS.mask.redaction_style = "surgical"
+            log.info("Overrode redaction style to surgical for debugging")
+        except Exception:
+            log.exception("Failed to override SETTINGS for surgical mask")
 
     if args.input:
         in_path = Path(args.input)

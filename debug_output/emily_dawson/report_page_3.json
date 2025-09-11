@@ -1,0 +1,65 @@
+{
+  "image_id": "page_3",
+  "stages": {
+    "preprocess": {
+      "name": "preprocess",
+      "duration_s": 0.025854083000012906,
+      "result": {
+        "orig_shape": [
+          2339,
+          1654
+        ],
+        "processed_shape": [
+          2048,
+          2048,
+          3
+        ],
+        "anonymized_text": null
+      },
+      "error": null
+    },
+    "text_detection": {
+      "name": "text_detection",
+      "duration_s": 8.553891917000328,
+      "result": {},
+      "error": "'TextDetector' object has no attribute 'merge_overlapping_regions'"
+    },
+    "phi_classification": {
+      "name": "phi_classification",
+      "duration_s": 0.00010687500071071554,
+      "result": {
+        "phi_count": 0,
+        "used_presidio": false,
+        "shadow_mode": false
+      },
+      "error": null
+    },
+    "masking": {
+      "name": "masking",
+      "duration_s": 0.8450538340002822,
+      "result": {
+        "merged": false,
+        "method": "telea",
+        "mask_coverage": 0.0,
+        "quality": {
+          "psnr": 47.47617721557617,
+          "ssim": 0.9997282914593892,
+          "edge_preservation": 1.0,
+          "texture_consistency": 0.9999377131462097,
+          "notes": []
+        }
+      },
+      "error": null
+    }
+  },
+  "quality": {
+    "total_time_s": 18.12603308300004
+  },
+  "metrics": {
+    "processed": 3,
+    "errors": 3,
+    "stages": {}
+  },
+  "timestamp": 1757572971.924629,
+  "phi_regions": []
+}

@@ -89,6 +89,15 @@ class OCRConfig(BaseModel):
     supported_languages: List[str] = Field(default_factory=lambda: ["en"])
     gpu_enabled: bool = False
     batch_size: int = Field(1, ge=1)
+    # allow a small slack below the configured confidence threshold so we
+    # don't discard marginally-lower OCR regions; this helps avoid empty
+    # accepted region lists when OCR confidences are slightly below target.
+    confidence_slack: float = Field(0.1, ge=0.0, le=1.0)
+    # fuzzy matching threshold (0-100) used to match OCR token sequences to
+    # target PHI phrases when attempting to merge adjacent tokens into a
+    # single region. Higher means stricter matching. Default 80 for parity
+    # with common fuzzywuzzy thresholds.
+    fuzz_threshold: int = Field(80, ge=0, le=100)
     # allow the system to operate in a fallback/CI mode where heavy
     # dependencies (EasyOCR / torch) may be unavailable; detectors should
     # check this flag to degrade gracefully.
@@ -120,6 +129,15 @@ class PHIDetectionConfig(BaseModel):
     # is enabled. The application logging config can route this logger to
     # a protected sink.
     nonredacted_audit_logger_name: str = Field("cim.audit.phi_raw")
+    # Backwards-compatible flag used by some tests and legacy code paths to
+    # toggle whether a Presidio-based detection pipeline should be used.
+    # Kept here to avoid import-time failures when older code sets this
+    # attribute dynamically during testing.
+    use_presidio: bool = Field(False)
+    # Legacy compatibility flags used in older tests and code paths. Keeping
+    # them here avoids ValueError when tests set these attributes dynamically.
+    use_spacy_fallback: bool = Field(True)
+    use_regex_fallback: bool = Field(True)
 
     @validator("custom_phi_patterns", pre=True)
     def _ensure_valid_regexes(cls, v):
@@ -157,6 +175,8 @@ class MaskingConfig(BaseModel):
     redaction_style: str = Field("inpaint")
     # padding in pixels when merging bboxes for a single black bar
     blackbox_padding_pixels: int = Field(5, ge=0, le=200)
+    # surgical masking padding (small per-entity padding when using 'surgical' style)
+    surgical_padding_pixels: int = Field(2, ge=0, le=50)
 
     @validator("inpainting_method")
     def _method_allowed(cls, v):
@@ -166,7 +186,7 @@ class MaskingConfig(BaseModel):
 
     @validator("redaction_style")
     def _redaction_allowed(cls, v: str):
-        allowed = {"inpaint", "blackbox", "blackbox_merge"}
+        allowed = {"inpaint", "blackbox", "blackbox_merge", "surgical"}
         if v not in allowed:
             raise ValueError(f"redaction_style must be one of {allowed}")
         return v
