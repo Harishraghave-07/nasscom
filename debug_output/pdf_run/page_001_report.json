@@ -1,0 +1,60 @@
+{
+  "image_id": "page_001",
+  "stages": {
+    "preprocess": {
+      "name": "preprocess",
+      "duration_s": 0.01313712499995745,
+      "result": {
+        "orig_shape": [
+          1755,
+          1241
+        ],
+        "processed_shape": [
+          1755,
+          1755,
+          3
+        ],
+        "anonymized_text": null
+      },
+      "error": null
+    },
+    "text_detection": {
+      "name": "text_detection",
+      "duration_s": 6.235180291000688,
+      "result": {
+        "detected": 2,
+        "accepted": 1,
+        "rejected": 1
+      },
+      "error": null
+    },
+    "phi_classification": {
+      "name": "phi_classification",
+      "duration_s": 0.6725415000000794,
+      "result": {
+        "phi_count": 0,
+        "used_presidio": true,
+        "shadow_mode": false
+      },
+      "error": null
+    },
+    "masking": {
+      "name": "masking",
+      "duration_s": 0.010145208999347233,
+      "result": {
+        "method": "inpaint"
+      },
+      "error": null
+    }
+  },
+  "quality": {
+    "total_time_s": 6.9631449169992266
+  },
+  "metrics": {
+    "processed": 1,
+    "errors": 0,
+    "stages": {}
+  },
+  "timestamp": 1757664465.2165859,
+  "phi_regions": []
+}

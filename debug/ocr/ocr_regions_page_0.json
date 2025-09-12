@@ -1,0 +1,72 @@
+[
+  {
+    "bbox": [
+      0,
+      0,
+      200,
+      100
+    ],
+    "word_boxes": [
+      {
+        "text": "John",
+        "bbox": [
+          0,
+          0,
+          40,
+          10
+        ],
+        "confidence": 0.9,
+        "start_char": 0,
+        "end_char": 4
+      },
+      {
+        "text": "Doe",
+        "bbox": [
+          50,
+          0,
+          90,
+          10
+        ],
+        "confidence": 0.9,
+        "start_char": 5,
+        "end_char": 8
+      }
+    ],
+    "text": "John Doe"
+  },
+  {
+    "bbox": [
+      0,
+      0,
+      200,
+      100
+    ],
+    "word_boxes": [
+      {
+        "text": "John",
+        "bbox": [
+          0,
+          0,
+          40,
+          10
+        ],
+        "confidence": 0.9,
+        "start_char": 0,
+        "end_char": 4
+      },
+      {
+        "text": "Doe",
+        "bbox": [
+          50,
+          0,
+          90,
+          10
+        ],
+        "confidence": 0.9,
+        "start_char": 5,
+        "end_char": 8
+      }
+    ],
+    "text": "John Doe"
+  }
+]

@@ -1,0 +1,60 @@
+{
+  "image_id": "Highlighted PHI Details Emily_Dawson_page0",
+  "stages": {
+    "preprocess": {
+      "name": "preprocess",
+      "duration_s": 0.014697541999794339,
+      "result": {
+        "orig_shape": [
+          1685,
+          1191
+        ],
+        "processed_shape": [
+          1685,
+          1685,
+          3
+        ],
+        "anonymized_text": null
+      },
+      "error": null
+    },
+    "text_detection": {
+      "name": "text_detection",
+      "duration_s": 5.715704209000251,
+      "result": {
+        "detected": 2,
+        "accepted": 1,
+        "rejected": 1
+      },
+      "error": null
+    },
+    "phi_classification": {
+      "name": "phi_classification",
+      "duration_s": 0.6783725000000231,
+      "result": {
+        "phi_count": 0,
+        "used_presidio": true,
+        "shadow_mode": false
+      },
+      "error": null
+    },
+    "masking": {
+      "name": "masking",
+      "duration_s": 0.00985412499994709,
+      "result": {
+        "method": "inpaint"
+      },
+      "error": null
+    }
+  },
+  "quality": {
+    "total_time_s": 6.446447874999649
+  },
+  "metrics": {
+    "processed": 1,
+    "errors": 0,
+    "stages": {}
+  },
+  "timestamp": 1757657674.853587,
+  "phi_regions": []
+}

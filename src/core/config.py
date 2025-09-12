@@ -118,7 +118,10 @@ class PHIDetectionConfig(BaseModel):
     enable_spacy_ner: bool = True
     spacy_model_name: str = "en_core_web_sm"
     custom_phi_patterns: Dict[str, str] = Field(default_factory=dict)
-    phi_confidence_threshold: float = Field(0.8, ge=0.0, le=1.0)
+    # Lower legacy regex/NER confidence threshold so fallback hits are
+    # allowed through when Presidio is not yet enabled everywhere. The
+    # user-requested value is 0.20 (was 0.8 by default).
+    phi_confidence_threshold: float = Field(0.20, ge=0.0, le=1.0)
     enable_audit_logging: bool = True
     # Whether audit logs should redact detected text snippets. When True,
     # detections in persisted audit records will have their `text` field
@@ -216,6 +219,15 @@ class ProcessingConfig(BaseModel):
         return str(Path(v).as_posix())
 
 
+class MappingConfig(BaseModel):
+    """Settings for mapping PHI character spans back to OCR word bboxes."""
+
+    # When True tests will raise on mapping failures instead of falling back
+    # to coarse region bboxes. This helps surface bugs in normalization or
+    # offset calculation early during CI.
+    raise_on_fail: bool = True
+
+
 class LoggingConfig(BaseModel):
     log_level: str = Field("INFO")
     log_file_path: str = Field("logs/clinical_masker.log")
@@ -260,11 +272,14 @@ class AppConfig(BaseSettings):
     mask: MaskingConfig = Field(default_factory=MaskingConfig)
     processing: ProcessingConfig = Field(default_factory=ProcessingConfig)
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
+    mapping: MappingConfig = Field(default_factory=MappingConfig)
     # Presidio routing and activation (centralized)
     presidio_canary_percentage: int = Field(
-        0, ge=0, le=100, description="Percent of traffic routed to Presidio pipeline"
+        100, ge=0, le=100, description="Percent of traffic routed to Presidio pipeline"
     )
-    use_presidio: bool = Field(False, description="Global toggle to enable Presidio for PHI detection")
+    use_presidio: bool = Field(True, description="Global toggle to enable Presidio for PHI detection")
+    # Toggle to enable verbose OCR debug outputs (JSON dumps and overlay PNGs)
+    ocr_debug: bool = Field(True, description="When True, OCR debug artifacts (json + overlays) are written to debug/ocr/")
 
     class Config:
         env_file = ".env"
@@ -449,4 +464,4 @@ except ValidationError as e:
     raise
 
 
-__all__ = ["AppConfig", "SETTINGS", "OCRConfig", "PHIDetectionConfig", "MaskingConfig", "ProcessingConfig", "LoggingConfig"]
+__all__ = ["AppConfig", "SETTINGS", "OCRConfig", "PHIDetectionConfig", "MaskingConfig", "ProcessingConfig", "LoggingConfig", "MappingConfig"]

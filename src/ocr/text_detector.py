@@ -397,6 +397,7 @@ class TextDetector:
             xs = [int(p[0]) for p in box]
             ys = [int(p[1]) for p in box]
             x1, x2 = min(xs), max(xs)
+
             y1, y2 = min(ys), max(ys)
             bbox = (x1, y1, x2, y2)
             area = (x2 - x1) * (y2 - y1)
@@ -552,8 +553,11 @@ class TextDetector:
                 # coordinates so downstream mapping/masking can operate precisely.
                 texts = []
                 confs = []
-                word_boxes: List[Dict[str, Any]] = []
-                char_offset = 0
+                # collect per-token interim entries (bbox/conf only). We'll
+                # recompute canonical start/end offsets after building the
+                # canonical combined_text using a single-space join so offsets
+                # are deterministic and stable across code paths.
+                token_entries: List[Dict[str, Any]] = []
                 # When EasyOCR returns word-level items for the crop, we need
                 # to record approximate character offsets relative to the
                 # combined region text so downstream mapping can align spans
@@ -576,29 +580,86 @@ class TextDetector:
                         abs_box = (int(x1 + wx1), int(y1 + wy1), int(x1 + wx2), int(y1 + wy2))
                     except Exception:
                         abs_box = (int(x1), int(y1), int(x2), int(y2))
-                    # estimate start/end char offsets within combined_text
-                    start_ch = char_offset
                     token = str(txt or "")
-                    token_len = len(token)
-                    end_ch = start_ch + token_len
-                    word_boxes.append({"text": token, "bbox": abs_box, "confidence": float(conf), "start_char": start_ch, "end_char": end_ch})
-                    # advance offset (account for a space separator)
-                    char_offset = end_ch + 1
+                    token_entries.append({"text": token, "bbox": abs_box, "confidence": float(conf)})
 
                 # Use a canonical single-space join for downstream offset mapping.
-                # Earlier implementations used newlines which led to inconsistencies
-                # when pipeline code assumed single-space joining. Keep token
-                # offsets consistent with this single-space representation.
+                # Compute deterministic start/end offsets for each token by
+                # walking the joined string with a cursor so every word-box has
+                # stable character offsets that match the string passed to
+                # detectors like Presidio.
                 combined_text = " ".join(texts)
+                word_boxes: List[Dict[str, Any]] = []
+                cursor = 0
+                for te in token_entries:
+                    token = te.get("text", "") or ""
+                    start = cursor
+                    end = start + len(token)
+                    # record bbox and offsets
+                    word_bbox = te.get("bbox")
+                    word_boxes.append({
+                        "text": token,
+                        "bbox": word_bbox,
+                        "confidence": float(te.get("confidence", 0.0)),
+                        "start_char": int(start),
+                        "end_char": int(end),
+                    })
+                    # advance cursor by token length + 1 for the joining space
+                    cursor = end + 1
                 avg_conf = float(sum(confs) / len(confs)) if confs else 0.0
 
                 r_out = dict(r)
+                # preserve the exact visible line as returned/assembled from EasyOCR
+                # for downstream analyzers (Presidio) that expect line breaks,
+                # expose it as `raw_line`. `text` remains the canonical single-
+                # space joined normalization used internally.
                 r_out.update({
                     "text": combined_text,
+                    "raw_line": combined_text,
                     "confidence": avg_conf,
                     "ocr_lines": texts,
                     "word_boxes": word_boxes,
                 })
+                # Optional OCR debug: write per-region word boxes and an overlay
+                try:
+                    if getattr(SETTINGS, "ocr_debug", False):
+                        import os
+                        from pathlib import Path
+                        dbg_dir = Path("debug") / "ocr"
+                        dbg_dir.mkdir(parents=True, exist_ok=True)
+                        # derive a page index from images_processed (0-based)
+                        page_idx = int(self.performance.get("images_processed", 0))
+                        # write word_boxes JSON for this region
+                        try:
+                            jpath = dbg_dir / f"ocr_regions_page_{page_idx}.json"
+                            # append or create a list of regions per run
+                            existing = []
+                            if jpath.exists():
+                                try:
+                                    existing = json.loads(jpath.read_text(encoding="utf-8")) or []
+                                except Exception:
+                                    existing = []
+                            existing.append({"bbox": r.get("bbox"), "word_boxes": word_boxes, "text": combined_text})
+                            tmp = jpath.with_suffix(".tmp")
+                            tmp.write_text(json.dumps(existing, ensure_ascii=False, indent=2), encoding="utf-8")
+                            os.replace(str(tmp), str(jpath))
+                        except Exception:
+                            logger.debug("Failed to write ocr region json for debug")
+
+                        # create overlay image showing word boxes on the full image
+                        if cv2 is not None:
+                            try:
+                                overlay = image.copy()
+                                for wb in word_boxes:
+                                    bx = wb.get("bbox") or (0, 0, 0, 0)
+                                    x1, y1, x2, y2 = [int(v) for v in bx]
+                                    cv2.rectangle(overlay, (x1, y1), (x2, y2), (0, 255, 0), 1)
+                                opath = dbg_dir / f"ocr_overlay_page_{page_idx}.png"
+                                cv2.imwrite(str(opath), overlay)
+                            except Exception:
+                                logger.debug("Failed to write ocr overlay png")
+                except Exception:
+                    logger.debug("Error in OCR debug dump")
                 results.append(r_out)
             except Exception:
                 logger.exception("Failed to OCR region")

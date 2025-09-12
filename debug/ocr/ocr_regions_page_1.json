@@ -1,0 +1,2235 @@
+[
+  {
+    "bbox": [
+      57,
+      210,
+      655,
+      889
+    ],
+    "word_boxes": [
+      {
+        "text": "Name: Emily R:",
+        "bbox": [
+          61,
+          210,
+          213,
+          234
+        ],
+        "confidence": 0.6637741512770107,
+        "start_char": 0,
+        "end_char": 14
+      },
+      {
+        "text": "Dawson",
+        "bbox": [
+          219,
+          210,
+          303,
+          232
+        ],
+        "confidence": 0.8436816155025801,
+        "start_char": 15,
+        "end_char": 21
+      },
+      {
+        "text": "DOB: March 12, 1975",
+        "bbox": [
+          59,
+          252,
+          277,
+          278
+        ],
+        "confidence": 0.9220936769066841,
+        "start_char": 22,
+        "end_char": 41
+      },
+      {
+        "text": "Gender: Female",
+        "bbox": [
+          59,
+          298,
+          223,
+          322
+        ],
+        "confidence": 0.8291914752218442,
+        "start_char": 42,
+        "end_char": 56
+      },
+      {
+        "text": "Ethnicity: Caucasian",
+        "bbox": [
+          58,
+          340,
+          265,
+          370
+        ],
+        "confidence": 0.9999584291519841,
+        "start_char": 57,
+        "end_char": 77
+      },
+      {
+        "text": "Address: 1284 Pine Ridge Drive; Aurora; CO 80014",
+        "bbox": [
+          59,
+          387,
+          567,
+          416
+        ],
+        "confidence": 0.556217639789756,
+        "start_char": 78,
+        "end_char": 126
+      },
+      {
+        "text": "Phone: (303) 555-7294",
+        "bbox": [
+          59,
+          434,
+          291,
+          460
+        ],
+        "confidence": 0.8880144950434822,
+        "start_char": 127,
+        "end_char": 148
+      },
+      {
+        "text": "Email: emily dawson75@example.com",
+        "bbox": [
+          59,
+          477,
+          441,
+          506
+        ],
+        "confidence": 0.937412017086284,
+        "start_char": 149,
+        "end_char": 182
+      },
+      {
+        "text": "SSN: 527-84-1937",
+        "bbox": [
+          59,
+          524,
+          245,
+          550
+        ],
+        "confidence": 0.736904610203115,
+        "start_char": 183,
+        "end_char": 199
+      },
+      {
+        "text": "Insurance Information",
+        "bbox": [
+          59,
+          588,
+          315,
+          614
+        ],
+        "confidence": 0.9805187846691222,
+        "start_char": 200,
+        "end_char": 221
+      },
+      {
+        "text": "Insurance Provider: Blue Cross Blue Shield of Illinois (BCBSL",
+        "bbox": [
+          57,
+          638,
+          651,
+          662
+        ],
+        "confidence": 0.5558733803049397,
+        "start_char": 222,
+        "end_char": 283
+      },
+      {
+        "text": "Plan Type: Blue Choice Preferred PPO",
+        "bbox": [
+          59,
+          684,
+          443,
+          712
+        ],
+        "confidence": 0.7724776755548529,
+        "start_char": 284,
+        "end_char": 320
+      },
+      {
+        "text": "Member ID: ILX983472516",
+        "bbox": [
+          59,
+          728,
+          329,
+          754
+        ],
+        "confidence": 0.9710837817488851,
+        "start_char": 321,
+        "end_char": 344
+      },
+      {
+        "text": "Group Number: 350712",
+        "bbox": [
+          57,
+          773,
+          295,
+          802
+        ],
+        "confidence": 0.9996246023891561,
+        "start_char": 345,
+        "end_char": 365
+      },
+      {
+        "text": "Policy Effective Date: 01/01/2023",
+        "bbox": [
+          57,
+          816,
+          387,
+          848
+        ],
+        "confidence": 0.8005295349493513,
+        "start_char": 366,
+        "end_char": 399
+      },
+      {
+        "text": "Paver ID: 03629",
+        "bbox": [
+          59,
+          866,
+          223,
+          889
+        ],
+        "confidence": 0.7061055863810778,
+        "start_char": 400,
+        "end_char": 415
+      }
+    ],
+    "text": "Name: Emily R: Dawson DOB: March 12, 1975 Gender: Female Ethnicity: Caucasian Address: 1284 Pine Ridge Drive; Aurora; CO 80014 Phone: (303) 555-7294 Email: emily dawson75@example.com SSN: 527-84-1937 Insurance Information Insurance Provider: Blue Cross Blue Shield of Illinois (BCBSL Plan Type: Blue Choice Preferred PPO Member ID: ILX983472516 Group Number: 350712 Policy Effective Date: 01/01/2023 Paver ID: 03629"
+  },
+  {
+    "bbox": [
+      57,
+      210,
+      655,
+      889
+    ],
+    "word_boxes": [
+      {
+        "text": "Name: Emily R:",
+        "bbox": [
+          61,
+          210,
+          213,
+          234
+        ],
+        "confidence": 0.6637741512770107,
+        "start_char": 0,
+        "end_char": 14
+      },
+      {
+        "text": "Dawson",
+        "bbox": [
+          219,
+          210,
+          303,
+          232
+        ],
+        "confidence": 0.8436816155025801,
+        "start_char": 15,
+        "end_char": 21
+      },
+      {
+        "text": "DOB: March 12, 1975",
+        "bbox": [
+          59,
+          252,
+          277,
+          278
+        ],
+        "confidence": 0.9220936769066841,
+        "start_char": 22,
+        "end_char": 41
+      },
+      {
+        "text": "Gender: Female",
+        "bbox": [
+          59,
+          298,
+          223,
+          322
+        ],
+        "confidence": 0.8291914752218442,
+        "start_char": 42,
+        "end_char": 56
+      },
+      {
+        "text": "Ethnicity: Caucasian",
+        "bbox": [
+          58,
+          340,
+          265,
+          370
+        ],
+        "confidence": 0.9999584291519841,
+        "start_char": 57,
+        "end_char": 77
+      },
+      {
+        "text": "Address: 1284 Pine Ridge Drive; Aurora; CO 80014",
+        "bbox": [
+          59,
+          387,
+          567,
+          416
+        ],
+        "confidence": 0.556217639789756,
+        "start_char": 78,
+        "end_char": 126
+      },
+      {
+        "text": "Phone: (303) 555-7294",
+        "bbox": [
+          59,
+          434,
+          291,
+          460
+        ],
+        "confidence": 0.8880144950434822,
+        "start_char": 127,
+        "end_char": 148
+      },
+      {
+        "text": "Email: emily dawson75@example.com",
+        "bbox": [
+          59,
+          477,
+          441,
+          506
+        ],
+        "confidence": 0.937412017086284,
+        "start_char": 149,
+        "end_char": 182
+      },
+      {
+        "text": "SSN: 527-84-1937",
+        "bbox": [
+          59,
+          524,
+          245,
+          550
+        ],
+        "confidence": 0.736904610203115,
+        "start_char": 183,
+        "end_char": 199
+      },
+      {
+        "text": "Insurance Information",
+        "bbox": [
+          59,
+          588,
+          315,
+          614
+        ],
+        "confidence": 0.9805187846691222,
+        "start_char": 200,
+        "end_char": 221
+      },
+      {
+        "text": "Insurance Provider: Blue Cross Blue Shield of Illinois (BCBSL",
+        "bbox": [
+          57,
+          638,
+          651,
+          662
+        ],
+        "confidence": 0.5558733803049397,
+        "start_char": 222,
+        "end_char": 283
+      },
+      {
+        "text": "Plan Type: Blue Choice Preferred PPO",
+        "bbox": [
+          59,
+          684,
+          443,
+          712
+        ],
+        "confidence": 0.7724776755548529,
+        "start_char": 284,
+        "end_char": 320
+      },
+      {
+        "text": "Member ID: ILX983472516",
+        "bbox": [
+          59,
+          728,
+          329,
+          754
+        ],
+        "confidence": 0.9710837817488851,
+        "start_char": 321,
+        "end_char": 344
+      },
+      {
+        "text": "Group Number: 350712",
+        "bbox": [
+          57,
+          773,
+          295,
+          802
+        ],
+        "confidence": 0.9996246023891561,
+        "start_char": 345,
+        "end_char": 365
+      },
+      {
+        "text": "Policy Effective Date: 01/01/2023",
+        "bbox": [
+          57,
+          816,
+          387,
+          848
+        ],
+        "confidence": 0.8005295349493513,
+        "start_char": 366,
+        "end_char": 399
+      },
+      {
+        "text": "Paver ID: 03629",
+        "bbox": [
+          59,
+          866,
+          223,
+          889
+        ],
+        "confidence": 0.7061055863810778,
+        "start_char": 400,
+        "end_char": 415
+      }
+    ],
+    "text": "Name: Emily R: Dawson DOB: March 12, 1975 Gender: Female Ethnicity: Caucasian Address: 1284 Pine Ridge Drive; Aurora; CO 80014 Phone: (303) 555-7294 Email: emily dawson75@example.com SSN: 527-84-1937 Insurance Information Insurance Provider: Blue Cross Blue Shield of Illinois (BCBSL Plan Type: Blue Choice Preferred PPO Member ID: ILX983472516 Group Number: 350712 Policy Effective Date: 01/01/2023 Paver ID: 03629"
+  },
+  {
+    "bbox": [
+      57,
+      210,
+      655,
+      889
+    ],
+    "word_boxes": [
+      {
+        "text": "Name: Emily R:",
+        "bbox": [
+          61,
+          210,
+          213,
+          234
+        ],
+        "confidence": 0.6637741512770107,
+        "start_char": 0,
+        "end_char": 14
+      },
+      {
+        "text": "Dawson",
+        "bbox": [
+          219,
+          210,
+          303,
+          232
+        ],
+        "confidence": 0.8436816155025801,
+        "start_char": 15,
+        "end_char": 21
+      },
+      {
+        "text": "DOB: March 12, 1975",
+        "bbox": [
+          59,
+          252,
+          277,
+          278
+        ],
+        "confidence": 0.9220936769066841,
+        "start_char": 22,
+        "end_char": 41
+      },
+      {
+        "text": "Gender: Female",
+        "bbox": [
+          59,
+          298,
+          223,
+          322
+        ],
+        "confidence": 0.8291914752218442,
+        "start_char": 42,
+        "end_char": 56
+      },
+      {
+        "text": "Ethnicity: Caucasian",
+        "bbox": [
+          58,
+          340,
+          265,
+          370
+        ],
+        "confidence": 0.9999584291519841,
+        "start_char": 57,
+        "end_char": 77
+      },
+      {
+        "text": "Address: 1284 Pine Ridge Drive; Aurora; CO 80014",
+        "bbox": [
+          59,
+          387,
+          567,
+          416
+        ],
+        "confidence": 0.556217639789756,
+        "start_char": 78,
+        "end_char": 126
+      },
+      {
+        "text": "Phone: (303) 555-7294",
+        "bbox": [
+          59,
+          434,
+          291,
+          460
+        ],
+        "confidence": 0.8880144950434822,
+        "start_char": 127,
+        "end_char": 148
+      },
+      {
+        "text": "Email: emily dawson75@example.com",
+        "bbox": [
+          59,
+          477,
+          441,
+          506
+        ],
+        "confidence": 0.937412017086284,
+        "start_char": 149,
+        "end_char": 182
+      },
+      {
+        "text": "SSN: 527-84-1937",
+        "bbox": [
+          59,
+          524,
+          245,
+          550
+        ],
+        "confidence": 0.736904610203115,
+        "start_char": 183,
+        "end_char": 199
+      },
+      {
+        "text": "Insurance Information",
+        "bbox": [
+          59,
+          588,
+          315,
+          614
+        ],
+        "confidence": 0.9805187846691222,
+        "start_char": 200,
+        "end_char": 221
+      },
+      {
+        "text": "Insurance Provider: Blue Cross Blue Shield of Illinois (BCBSL",
+        "bbox": [
+          57,
+          638,
+          651,
+          662
+        ],
+        "confidence": 0.5558733803049397,
+        "start_char": 222,
+        "end_char": 283
+      },
+      {
+        "text": "Plan Type: Blue Choice Preferred PPO",
+        "bbox": [
+          59,
+          684,
+          443,
+          712
+        ],
+        "confidence": 0.7724776755548529,
+        "start_char": 284,
+        "end_char": 320
+      },
+      {
+        "text": "Member ID: ILX983472516",
+        "bbox": [
+          59,
+          728,
+          329,
+          754
+        ],
+        "confidence": 0.9710837817488851,
+        "start_char": 321,
+        "end_char": 344
+      },
+      {
+        "text": "Group Number: 350712",
+        "bbox": [
+          57,
+          773,
+          295,
+          802
+        ],
+        "confidence": 0.9996246023891561,
+        "start_char": 345,
+        "end_char": 365
+      },
+      {
+        "text": "Policy Effective Date: 01/01/2023",
+        "bbox": [
+          57,
+          816,
+          387,
+          848
+        ],
+        "confidence": 0.8005295349493513,
+        "start_char": 366,
+        "end_char": 399
+      },
+      {
+        "text": "Paver ID: 03629",
+        "bbox": [
+          59,
+          866,
+          223,
+          889
+        ],
+        "confidence": 0.7061055863810778,
+        "start_char": 400,
+        "end_char": 415
+      }
+    ],
+    "text": "Name: Emily R: Dawson DOB: March 12, 1975 Gender: Female Ethnicity: Caucasian Address: 1284 Pine Ridge Drive; Aurora; CO 80014 Phone: (303) 555-7294 Email: emily dawson75@example.com SSN: 527-84-1937 Insurance Information Insurance Provider: Blue Cross Blue Shield of Illinois (BCBSL Plan Type: Blue Choice Preferred PPO Member ID: ILX983472516 Group Number: 350712 Policy Effective Date: 01/01/2023 Paver ID: 03629"
+  },
+  {
+    "bbox": [
+      57,
+      210,
+      655,
+      889
+    ],
+    "word_boxes": [
+      {
+        "text": "Name: Emily R:",
+        "bbox": [
+          61,
+          210,
+          213,
+          234
+        ],
+        "confidence": 0.6637741512770107,
+        "start_char": 0,
+        "end_char": 14
+      },
+      {
+        "text": "Dawson",
+        "bbox": [
+          219,
+          210,
+          303,
+          232
+        ],
+        "confidence": 0.8436816155025801,
+        "start_char": 15,
+        "end_char": 21
+      },
+      {
+        "text": "DOB: March 12, 1975",
+        "bbox": [
+          59,
+          252,
+          277,
+          278
+        ],
+        "confidence": 0.9220936769066841,
+        "start_char": 22,
+        "end_char": 41
+      },
+      {
+        "text": "Gender: Female",
+        "bbox": [
+          59,
+          298,
+          223,
+          322
+        ],
+        "confidence": 0.8291914752218442,
+        "start_char": 42,
+        "end_char": 56
+      },
+      {
+        "text": "Ethnicity: Caucasian",
+        "bbox": [
+          58,
+          340,
+          265,
+          370
+        ],
+        "confidence": 0.9999584291519841,
+        "start_char": 57,
+        "end_char": 77
+      },
+      {
+        "text": "Address: 1284 Pine Ridge Drive; Aurora; CO 80014",
+        "bbox": [
+          59,
+          387,
+          567,
+          416
+        ],
+        "confidence": 0.556217639789756,
+        "start_char": 78,
+        "end_char": 126
+      },
+      {
+        "text": "Phone: (303) 555-7294",
+        "bbox": [
+          59,
+          434,
+          291,
+          460
+        ],
+        "confidence": 0.8880144950434822,
+        "start_char": 127,
+        "end_char": 148
+      },
+      {
+        "text": "Email: emily dawson75@example.com",
+        "bbox": [
+          59,
+          477,
+          441,
+          506
+        ],
+        "confidence": 0.937412017086284,
+        "start_char": 149,
+        "end_char": 182
+      },
+      {
+        "text": "SSN: 527-84-1937",
+        "bbox": [
+          59,
+          524,
+          245,
+          550
+        ],
+        "confidence": 0.736904610203115,
+        "start_char": 183,
+        "end_char": 199
+      },
+      {
+        "text": "Insurance Information",
+        "bbox": [
+          59,
+          588,
+          315,
+          614
+        ],
+        "confidence": 0.9805187846691222,
+        "start_char": 200,
+        "end_char": 221
+      },
+      {
+        "text": "Insurance Provider: Blue Cross Blue Shield of Illinois (BCBSL",
+        "bbox": [
+          57,
+          638,
+          651,
+          662
+        ],
+        "confidence": 0.5558733803049397,
+        "start_char": 222,
+        "end_char": 283
+      },
+      {
+        "text": "Plan Type: Blue Choice Preferred PPO",
+        "bbox": [
+          59,
+          684,
+          443,
+          712
+        ],
+        "confidence": 0.7724776755548529,
+        "start_char": 284,
+        "end_char": 320
+      },
+      {
+        "text": "Member ID: ILX983472516",
+        "bbox": [
+          59,
+          728,
+          329,
+          754
+        ],
+        "confidence": 0.9710837817488851,
+        "start_char": 321,
+        "end_char": 344
+      },
+      {
+        "text": "Group Number: 350712",
+        "bbox": [
+          57,
+          773,
+          295,
+          802
+        ],
+        "confidence": 0.9996246023891561,
+        "start_char": 345,
+        "end_char": 365
+      },
+      {
+        "text": "Policy Effective Date: 01/01/2023",
+        "bbox": [
+          57,
+          816,
+          387,
+          848
+        ],
+        "confidence": 0.8005295349493513,
+        "start_char": 366,
+        "end_char": 399
+      },
+      {
+        "text": "Paver ID: 03629",
+        "bbox": [
+          59,
+          866,
+          223,
+          889
+        ],
+        "confidence": 0.7061055863810778,
+        "start_char": 400,
+        "end_char": 415
+      }
+    ],
+    "text": "Name: Emily R: Dawson DOB: March 12, 1975 Gender: Female Ethnicity: Caucasian Address: 1284 Pine Ridge Drive; Aurora; CO 80014 Phone: (303) 555-7294 Email: emily dawson75@example.com SSN: 527-84-1937 Insurance Information Insurance Provider: Blue Cross Blue Shield of Illinois (BCBSL Plan Type: Blue Choice Preferred PPO Member ID: ILX983472516 Group Number: 350712 Policy Effective Date: 01/01/2023 Paver ID: 03629"
+  },
+  {
+    "bbox": [
+      59,
+      218,
+      683,
+      927
+    ],
+    "word_boxes": [
+      {
+        "text": "Name: Emily R_",
+        "bbox": [
+          63,
+          218,
+          221,
+          242
+        ],
+        "confidence": 0.959040249752557,
+        "start_char": 0,
+        "end_char": 14
+      },
+      {
+        "text": "Dawson",
+        "bbox": [
+          227,
+          218,
+          315,
+          240
+        ],
+        "confidence": 0.8603528488394836,
+        "start_char": 15,
+        "end_char": 21
+      },
+      {
+        "text": "DOB: March 12, 1975",
+        "bbox": [
+          63,
+          262,
+          289,
+          288
+        ],
+        "confidence": 0.8254338084969953,
+        "start_char": 22,
+        "end_char": 41
+      },
+      {
+        "text": "Gender: Female",
+        "bbox": [
+          61,
+          310,
+          233,
+          336
+        ],
+        "confidence": 0.9959826468310939,
+        "start_char": 42,
+        "end_char": 56
+      },
+      {
+        "text": "Ethnicity: Caucasian",
+        "bbox": [
+          62,
+          355,
+          275,
+          386
+        ],
+        "confidence": 0.9999326478616521,
+        "start_char": 57,
+        "end_char": 77
+      },
+      {
+        "text": "Address: 1284 Pine Ridge Drive, Aurora, CO 80014",
+        "bbox": [
+          63,
+          402,
+          589,
+          432
+        ],
+        "confidence": 0.7109006548427838,
+        "start_char": 78,
+        "end_char": 126
+      },
+      {
+        "text": "Phone: (303) 555-7294",
+        "bbox": [
+          63,
+          452,
+          303,
+          478
+        ],
+        "confidence": 0.6034570304658984,
+        "start_char": 127,
+        "end_char": 148
+      },
+      {
+        "text": "Email: emily dawson75@example.com",
+        "bbox": [
+          63,
+          500,
+          459,
+          526
+        ],
+        "confidence": 0.9133779871341274,
+        "start_char": 149,
+        "end_char": 182
+      },
+      {
+        "text": "SSN: 527-84-1937",
+        "bbox": [
+          61,
+          546,
+          255,
+          572
+        ],
+        "confidence": 0.4773082356661932,
+        "start_char": 183,
+        "end_char": 199
+      },
+      {
+        "text": "Insurance Information",
+        "bbox": [
+          61,
+          612,
+          329,
+          642
+        ],
+        "confidence": 0.9999571804311627,
+        "start_char": 200,
+        "end_char": 221
+      },
+      {
+        "text": "Insurance Provider: Blue Cross Blue Shield of Illinois (BCBSI",
+        "bbox": [
+          61,
+          664,
+          683,
+          694
+        ],
+        "confidence": 0.8548437250610721,
+        "start_char": 222,
+        "end_char": 283
+      },
+      {
+        "text": "Plan Type: Blue Choice Preferred PPO",
+        "bbox": [
+          63,
+          712,
+          463,
+          740
+        ],
+        "confidence": 0.7872915109387311,
+        "start_char": 284,
+        "end_char": 320
+      },
+      {
+        "text": "Member ID: ILX983472516",
+        "bbox": [
+          63,
+          758,
+          343,
+          784
+        ],
+        "confidence": 0.8975293641551428,
+        "start_char": 321,
+        "end_char": 344
+      },
+      {
+        "text": "Group Number: 350712",
+        "bbox": [
+          60,
+          805,
+          307,
+          835
+        ],
+        "confidence": 0.5451658052328707,
+        "start_char": 345,
+        "end_char": 365
+      },
+      {
+        "text": "Policy Effective Date: 01/01/2023",
+        "bbox": [
+          60,
+          852,
+          403,
+          882
+        ],
+        "confidence": 0.5560670137868005,
+        "start_char": 366,
+        "end_char": 399
+      },
+      {
+        "text": "Payer ID: 03629",
+        "bbox": [
+          59,
+          901,
+          233,
+          927
+        ],
+        "confidence": 0.9968033594736536,
+        "start_char": 400,
+        "end_char": 415
+      }
+    ],
+    "text": "Name: Emily R_ Dawson DOB: March 12, 1975 Gender: Female Ethnicity: Caucasian Address: 1284 Pine Ridge Drive, Aurora, CO 80014 Phone: (303) 555-7294 Email: emily dawson75@example.com SSN: 527-84-1937 Insurance Information Insurance Provider: Blue Cross Blue Shield of Illinois (BCBSI Plan Type: Blue Choice Preferred PPO Member ID: ILX983472516 Group Number: 350712 Policy Effective Date: 01/01/2023 Payer ID: 03629"
+  },
+  {
+    "bbox": [
+      59,
+      218,
+      683,
+      927
+    ],
+    "word_boxes": [
+      {
+        "text": "Name: Emily R_",
+        "bbox": [
+          63,
+          218,
+          221,
+          242
+        ],
+        "confidence": 0.959040249752557,
+        "start_char": 0,
+        "end_char": 14
+      },
+      {
+        "text": "Dawson",
+        "bbox": [
+          227,
+          218,
+          315,
+          240
+        ],
+        "confidence": 0.8603528488394836,
+        "start_char": 15,
+        "end_char": 21
+      },
+      {
+        "text": "DOB: March 12, 1975",
+        "bbox": [
+          63,
+          262,
+          289,
+          288
+        ],
+        "confidence": 0.8254338084969953,
+        "start_char": 22,
+        "end_char": 41
+      },
+      {
+        "text": "Gender: Female",
+        "bbox": [
+          61,
+          310,
+          233,
+          336
+        ],
+        "confidence": 0.9959826468310939,
+        "start_char": 42,
+        "end_char": 56
+      },
+      {
+        "text": "Ethnicity: Caucasian",
+        "bbox": [
+          62,
+          355,
+          275,
+          386
+        ],
+        "confidence": 0.9999326478616521,
+        "start_char": 57,
+        "end_char": 77
+      },
+      {
+        "text": "Address: 1284 Pine Ridge Drive, Aurora, CO 80014",
+        "bbox": [
+          63,
+          402,
+          589,
+          432
+        ],
+        "confidence": 0.7109006548427838,
+        "start_char": 78,
+        "end_char": 126
+      },
+      {
+        "text": "Phone: (303) 555-7294",
+        "bbox": [
+          63,
+          452,
+          303,
+          478
+        ],
+        "confidence": 0.6034570304658984,
+        "start_char": 127,
+        "end_char": 148
+      },
+      {
+        "text": "Email: emily dawson75@example.com",
+        "bbox": [
+          63,
+          500,
+          459,
+          526
+        ],
+        "confidence": 0.9133779871341274,
+        "start_char": 149,
+        "end_char": 182
+      },
+      {
+        "text": "SSN: 527-84-1937",
+        "bbox": [
+          61,
+          546,
+          255,
+          572
+        ],
+        "confidence": 0.4773082356661932,
+        "start_char": 183,
+        "end_char": 199
+      },
+      {
+        "text": "Insurance Information",
+        "bbox": [
+          61,
+          612,
+          329,
+          642
+        ],
+        "confidence": 0.9999571804311627,
+        "start_char": 200,
+        "end_char": 221
+      },
+      {
+        "text": "Insurance Provider: Blue Cross Blue Shield of Illinois (BCBSI",
+        "bbox": [
+          61,
+          664,
+          683,
+          694
+        ],
+        "confidence": 0.8548437250610721,
+        "start_char": 222,
+        "end_char": 283
+      },
+      {
+        "text": "Plan Type: Blue Choice Preferred PPO",
+        "bbox": [
+          63,
+          712,
+          463,
+          740
+        ],
+        "confidence": 0.7872915109387311,
+        "start_char": 284,
+        "end_char": 320
+      },
+      {
+        "text": "Member ID: ILX983472516",
+        "bbox": [
+          63,
+          758,
+          343,
+          784
+        ],
+        "confidence": 0.8975293641551428,
+        "start_char": 321,
+        "end_char": 344
+      },
+      {
+        "text": "Group Number: 350712",
+        "bbox": [
+          60,
+          805,
+          307,
+          835
+        ],
+        "confidence": 0.5451658052328707,
+        "start_char": 345,
+        "end_char": 365
+      },
+      {
+        "text": "Policy Effective Date: 01/01/2023",
+        "bbox": [
+          60,
+          852,
+          403,
+          882
+        ],
+        "confidence": 0.5560670137868005,
+        "start_char": 366,
+        "end_char": 399
+      },
+      {
+        "text": "Payer ID: 03629",
+        "bbox": [
+          59,
+          901,
+          233,
+          927
+        ],
+        "confidence": 0.9968033594736536,
+        "start_char": 400,
+        "end_char": 415
+      }
+    ],
+    "text": "Name: Emily R_ Dawson DOB: March 12, 1975 Gender: Female Ethnicity: Caucasian Address: 1284 Pine Ridge Drive, Aurora, CO 80014 Phone: (303) 555-7294 Email: emily dawson75@example.com SSN: 527-84-1937 Insurance Information Insurance Provider: Blue Cross Blue Shield of Illinois (BCBSI Plan Type: Blue Choice Preferred PPO Member ID: ILX983472516 Group Number: 350712 Policy Effective Date: 01/01/2023 Payer ID: 03629"
+  },
+  {
+    "bbox": [
+      59,
+      218,
+      683,
+      927
+    ],
+    "word_boxes": [
+      {
+        "text": "Name: Emily R_",
+        "bbox": [
+          63,
+          218,
+          221,
+          242
+        ],
+        "confidence": 0.959040249752557,
+        "start_char": 0,
+        "end_char": 14
+      },
+      {
+        "text": "Dawson",
+        "bbox": [
+          227,
+          218,
+          315,
+          240
+        ],
+        "confidence": 0.8603528488394836,
+        "start_char": 15,
+        "end_char": 21
+      },
+      {
+        "text": "DOB: March 12, 1975",
+        "bbox": [
+          63,
+          262,
+          289,
+          288
+        ],
+        "confidence": 0.8254338084969953,
+        "start_char": 22,
+        "end_char": 41
+      },
+      {
+        "text": "Gender: Female",
+        "bbox": [
+          61,
+          310,
+          233,
+          336
+        ],
+        "confidence": 0.9959826468310939,
+        "start_char": 42,
+        "end_char": 56
+      },
+      {
+        "text": "Ethnicity: Caucasian",
+        "bbox": [
+          62,
+          355,
+          275,
+          386
+        ],
+        "confidence": 0.9999326478616521,
+        "start_char": 57,
+        "end_char": 77
+      },
+      {
+        "text": "Address: 1284 Pine Ridge Drive, Aurora, CO 80014",
+        "bbox": [
+          63,
+          402,
+          589,
+          432
+        ],
+        "confidence": 0.7109006548427838,
+        "start_char": 78,
+        "end_char": 126
+      },
+      {
+        "text": "Phone: (303) 555-7294",
+        "bbox": [
+          63,
+          452,
+          303,
+          478
+        ],
+        "confidence": 0.6034570304658984,
+        "start_char": 127,
+        "end_char": 148
+      },
+      {
+        "text": "Email: emily dawson75@example.com",
+        "bbox": [
+          63,
+          500,
+          459,
+          526
+        ],
+        "confidence": 0.9133779871341274,
+        "start_char": 149,
+        "end_char": 182
+      },
+      {
+        "text": "SSN: 527-84-1937",
+        "bbox": [
+          61,
+          546,
+          255,
+          572
+        ],
+        "confidence": 0.4773082356661932,
+        "start_char": 183,
+        "end_char": 199
+      },
+      {
+        "text": "Insurance Information",
+        "bbox": [
+          61,
+          612,
+          329,
+          642
+        ],
+        "confidence": 0.9999571804311627,
+        "start_char": 200,
+        "end_char": 221
+      },
+      {
+        "text": "Insurance Provider: Blue Cross Blue Shield of Illinois (BCBSI",
+        "bbox": [
+          61,
+          664,
+          683,
+          694
+        ],
+        "confidence": 0.8548437250610721,
+        "start_char": 222,
+        "end_char": 283
+      },
+      {
+        "text": "Plan Type: Blue Choice Preferred PPO",
+        "bbox": [
+          63,
+          712,
+          463,
+          740
+        ],
+        "confidence": 0.7872915109387311,
+        "start_char": 284,
+        "end_char": 320
+      },
+      {
+        "text": "Member ID: ILX983472516",
+        "bbox": [
+          63,
+          758,
+          343,
+          784
+        ],
+        "confidence": 0.8975293641551428,
+        "start_char": 321,
+        "end_char": 344
+      },
+      {
+        "text": "Group Number: 350712",
+        "bbox": [
+          60,
+          805,
+          307,
+          835
+        ],
+        "confidence": 0.5451658052328707,
+        "start_char": 345,
+        "end_char": 365
+      },
+      {
+        "text": "Policy Effective Date: 01/01/2023",
+        "bbox": [
+          60,
+          852,
+          403,
+          882
+        ],
+        "confidence": 0.5560670137868005,
+        "start_char": 366,
+        "end_char": 399
+      },
+      {
+        "text": "Payer ID: 03629",
+        "bbox": [
+          59,
+          901,
+          233,
+          927
+        ],
+        "confidence": 0.9968033594736536,
+        "start_char": 400,
+        "end_char": 415
+      }
+    ],
+    "text": "Name: Emily R_ Dawson DOB: March 12, 1975 Gender: Female Ethnicity: Caucasian Address: 1284 Pine Ridge Drive, Aurora, CO 80014 Phone: (303) 555-7294 Email: emily dawson75@example.com SSN: 527-84-1937 Insurance Information Insurance Provider: Blue Cross Blue Shield of Illinois (BCBSI Plan Type: Blue Choice Preferred PPO Member ID: ILX983472516 Group Number: 350712 Policy Effective Date: 01/01/2023 Payer ID: 03629"
+  },
+  {
+    "bbox": [
+      59,
+      218,
+      683,
+      927
+    ],
+    "word_boxes": [
+      {
+        "text": "Name: Emily R_",
+        "bbox": [
+          63,
+          218,
+          221,
+          242
+        ],
+        "confidence": 0.959040249752557,
+        "start_char": 0,
+        "end_char": 14
+      },
+      {
+        "text": "Dawson",
+        "bbox": [
+          227,
+          218,
+          315,
+          240
+        ],
+        "confidence": 0.8603528488394836,
+        "start_char": 15,
+        "end_char": 21
+      },
+      {
+        "text": "DOB: March 12, 1975",
+        "bbox": [
+          63,
+          262,
+          289,
+          288
+        ],
+        "confidence": 0.8254338084969953,
+        "start_char": 22,
+        "end_char": 41
+      },
+      {
+        "text": "Gender: Female",
+        "bbox": [
+          61,
+          310,
+          233,
+          336
+        ],
+        "confidence": 0.9959826468310939,
+        "start_char": 42,
+        "end_char": 56
+      },
+      {
+        "text": "Ethnicity: Caucasian",
+        "bbox": [
+          62,
+          355,
+          275,
+          386
+        ],
+        "confidence": 0.9999326478616521,
+        "start_char": 57,
+        "end_char": 77
+      },
+      {
+        "text": "Address: 1284 Pine Ridge Drive, Aurora, CO 80014",
+        "bbox": [
+          63,
+          402,
+          589,
+          432
+        ],
+        "confidence": 0.7109006548427838,
+        "start_char": 78,
+        "end_char": 126
+      },
+      {
+        "text": "Phone: (303) 555-7294",
+        "bbox": [
+          63,
+          452,
+          303,
+          478
+        ],
+        "confidence": 0.6034570304658984,
+        "start_char": 127,
+        "end_char": 148
+      },
+      {
+        "text": "Email: emily dawson75@example.com",
+        "bbox": [
+          63,
+          500,
+          459,
+          526
+        ],
+        "confidence": 0.9133779871341274,
+        "start_char": 149,
+        "end_char": 182
+      },
+      {
+        "text": "SSN: 527-84-1937",
+        "bbox": [
+          61,
+          546,
+          255,
+          572
+        ],
+        "confidence": 0.4773082356661932,
+        "start_char": 183,
+        "end_char": 199
+      },
+      {
+        "text": "Insurance Information",
+        "bbox": [
+          61,
+          612,
+          329,
+          642
+        ],
+        "confidence": 0.9999571804311627,
+        "start_char": 200,
+        "end_char": 221
+      },
+      {
+        "text": "Insurance Provider: Blue Cross Blue Shield of Illinois (BCBSI",
+        "bbox": [
+          61,
+          664,
+          683,
+          694
+        ],
+        "confidence": 0.8548437250610721,
+        "start_char": 222,
+        "end_char": 283
+      },
+      {
+        "text": "Plan Type: Blue Choice Preferred PPO",
+        "bbox": [
+          63,
+          712,
+          463,
+          740
+        ],
+        "confidence": 0.7872915109387311,
+        "start_char": 284,
+        "end_char": 320
+      },
+      {
+        "text": "Member ID: ILX983472516",
+        "bbox": [
+          63,
+          758,
+          343,
+          784
+        ],
+        "confidence": 0.8975293641551428,
+        "start_char": 321,
+        "end_char": 344
+      },
+      {
+        "text": "Group Number: 350712",
+        "bbox": [
+          60,
+          805,
+          307,
+          835
+        ],
+        "confidence": 0.5451658052328707,
+        "start_char": 345,
+        "end_char": 365
+      },
+      {
+        "text": "Policy Effective Date: 01/01/2023",
+        "bbox": [
+          60,
+          852,
+          403,
+          882
+        ],
+        "confidence": 0.5560670137868005,
+        "start_char": 366,
+        "end_char": 399
+      },
+      {
+        "text": "Payer ID: 03629",
+        "bbox": [
+          59,
+          901,
+          233,
+          927
+        ],
+        "confidence": 0.9968033594736536,
+        "start_char": 400,
+        "end_char": 415
+      }
+    ],
+    "text": "Name: Emily R_ Dawson DOB: March 12, 1975 Gender: Female Ethnicity: Caucasian Address: 1284 Pine Ridge Drive, Aurora, CO 80014 Phone: (303) 555-7294 Email: emily dawson75@example.com SSN: 527-84-1937 Insurance Information Insurance Provider: Blue Cross Blue Shield of Illinois (BCBSI Plan Type: Blue Choice Preferred PPO Member ID: ILX983472516 Group Number: 350712 Policy Effective Date: 01/01/2023 Payer ID: 03629"
+  },
+  {
+    "bbox": [
+      59,
+      218,
+      683,
+      927
+    ],
+    "word_boxes": [
+      {
+        "text": "Name: Emily R_",
+        "bbox": [
+          63,
+          218,
+          221,
+          242
+        ],
+        "confidence": 0.959040249752557,
+        "start_char": 0,
+        "end_char": 14
+      },
+      {
+        "text": "Dawson",
+        "bbox": [
+          227,
+          218,
+          315,
+          240
+        ],
+        "confidence": 0.8603528488394836,
+        "start_char": 15,
+        "end_char": 21
+      },
+      {
+        "text": "DOB: March 12, 1975",
+        "bbox": [
+          63,
+          262,
+          289,
+          288
+        ],
+        "confidence": 0.8254338084969953,
+        "start_char": 22,
+        "end_char": 41
+      },
+      {
+        "text": "Gender: Female",
+        "bbox": [
+          61,
+          310,
+          233,
+          336
+        ],
+        "confidence": 0.9959826468310939,
+        "start_char": 42,
+        "end_char": 56
+      },
+      {
+        "text": "Ethnicity: Caucasian",
+        "bbox": [
+          62,
+          355,
+          275,
+          386
+        ],
+        "confidence": 0.9999326478616521,
+        "start_char": 57,
+        "end_char": 77
+      },
+      {
+        "text": "Address: 1284 Pine Ridge Drive, Aurora, CO 80014",
+        "bbox": [
+          63,
+          402,
+          589,
+          432
+        ],
+        "confidence": 0.7109006548427838,
+        "start_char": 78,
+        "end_char": 126
+      },
+      {
+        "text": "Phone: (303) 555-7294",
+        "bbox": [
+          63,
+          452,
+          303,
+          478
+        ],
+        "confidence": 0.6034570304658984,
+        "start_char": 127,
+        "end_char": 148
+      },
+      {
+        "text": "Email: emily dawson75@example.com",
+        "bbox": [
+          63,
+          500,
+          459,
+          526
+        ],
+        "confidence": 0.9133779871341274,
+        "start_char": 149,
+        "end_char": 182
+      },
+      {
+        "text": "SSN: 527-84-1937",
+        "bbox": [
+          61,
+          546,
+          255,
+          572
+        ],
+        "confidence": 0.4773082356661932,
+        "start_char": 183,
+        "end_char": 199
+      },
+      {
+        "text": "Insurance Information",
+        "bbox": [
+          61,
+          612,
+          329,
+          642
+        ],
+        "confidence": 0.9999571804311627,
+        "start_char": 200,
+        "end_char": 221
+      },
+      {
+        "text": "Insurance Provider: Blue Cross Blue Shield of Illinois (BCBSI",
+        "bbox": [
+          61,
+          664,
+          683,
+          694
+        ],
+        "confidence": 0.8548437250610721,
+        "start_char": 222,
+        "end_char": 283
+      },
+      {
+        "text": "Plan Type: Blue Choice Preferred PPO",
+        "bbox": [
+          63,
+          712,
+          463,
+          740
+        ],
+        "confidence": 0.7872915109387311,
+        "start_char": 284,
+        "end_char": 320
+      },
+      {
+        "text": "Member ID: ILX983472516",
+        "bbox": [
+          63,
+          758,
+          343,
+          784
+        ],
+        "confidence": 0.8975293641551428,
+        "start_char": 321,
+        "end_char": 344
+      },
+      {
+        "text": "Group Number: 350712",
+        "bbox": [
+          60,
+          805,
+          307,
+          835
+        ],
+        "confidence": 0.5451658052328707,
+        "start_char": 345,
+        "end_char": 365
+      },
+      {
+        "text": "Policy Effective Date: 01/01/2023",
+        "bbox": [
+          60,
+          852,
+          403,
+          882
+        ],
+        "confidence": 0.5560670137868005,
+        "start_char": 366,
+        "end_char": 399
+      },
+      {
+        "text": "Payer ID: 03629",
+        "bbox": [
+          59,
+          901,
+          233,
+          927
+        ],
+        "confidence": 0.9968033594736536,
+        "start_char": 400,
+        "end_char": 415
+      }
+    ],
+    "text": "Name: Emily R_ Dawson DOB: March 12, 1975 Gender: Female Ethnicity: Caucasian Address: 1284 Pine Ridge Drive, Aurora, CO 80014 Phone: (303) 555-7294 Email: emily dawson75@example.com SSN: 527-84-1937 Insurance Information Insurance Provider: Blue Cross Blue Shield of Illinois (BCBSI Plan Type: Blue Choice Preferred PPO Member ID: ILX983472516 Group Number: 350712 Policy Effective Date: 01/01/2023 Payer ID: 03629"
+  },
+  {
+    "bbox": [
+      59,
+      218,
+      683,
+      927
+    ],
+    "word_boxes": [
+      {
+        "text": "Name: Emily R_",
+        "bbox": [
+          63,
+          218,
+          221,
+          242
+        ],
+        "confidence": 0.959040249752557,
+        "start_char": 0,
+        "end_char": 14
+      },
+      {
+        "text": "Dawson",
+        "bbox": [
+          227,
+          218,
+          315,
+          240
+        ],
+        "confidence": 0.8603528488394836,
+        "start_char": 15,
+        "end_char": 21
+      },
+      {
+        "text": "DOB: March 12, 1975",
+        "bbox": [
+          63,
+          262,
+          289,
+          288
+        ],
+        "confidence": 0.8254338084969953,
+        "start_char": 22,
+        "end_char": 41
+      },
+      {
+        "text": "Gender: Female",
+        "bbox": [
+          61,
+          310,
+          233,
+          336
+        ],
+        "confidence": 0.9959826468310939,
+        "start_char": 42,
+        "end_char": 56
+      },
+      {
+        "text": "Ethnicity: Caucasian",
+        "bbox": [
+          62,
+          355,
+          275,
+          386
+        ],
+        "confidence": 0.9999326478616521,
+        "start_char": 57,
+        "end_char": 77
+      },
+      {
+        "text": "Address: 1284 Pine Ridge Drive, Aurora, CO 80014",
+        "bbox": [
+          63,
+          402,
+          589,
+          432
+        ],
+        "confidence": 0.7109006548427838,
+        "start_char": 78,
+        "end_char": 126
+      },
+      {
+        "text": "Phone: (303) 555-7294",
+        "bbox": [
+          63,
+          452,
+          303,
+          478
+        ],
+        "confidence": 0.6034570304658984,
+        "start_char": 127,
+        "end_char": 148
+      },
+      {
+        "text": "Email: emily dawson75@example.com",
+        "bbox": [
+          63,
+          500,
+          459,
+          526
+        ],
+        "confidence": 0.9133779871341274,
+        "start_char": 149,
+        "end_char": 182
+      },
+      {
+        "text": "SSN: 527-84-1937",
+        "bbox": [
+          61,
+          546,
+          255,
+          572
+        ],
+        "confidence": 0.4773082356661932,
+        "start_char": 183,
+        "end_char": 199
+      },
+      {
+        "text": "Insurance Information",
+        "bbox": [
+          61,
+          612,
+          329,
+          642
+        ],
+        "confidence": 0.9999571804311627,
+        "start_char": 200,
+        "end_char": 221
+      },
+      {
+        "text": "Insurance Provider: Blue Cross Blue Shield of Illinois (BCBSI",
+        "bbox": [
+          61,
+          664,
+          683,
+          694
+        ],
+        "confidence": 0.8548437250610721,
+        "start_char": 222,
+        "end_char": 283
+      },
+      {
+        "text": "Plan Type: Blue Choice Preferred PPO",
+        "bbox": [
+          63,
+          712,
+          463,
+          740
+        ],
+        "confidence": 0.7872915109387311,
+        "start_char": 284,
+        "end_char": 320
+      },
+      {
+        "text": "Member ID: ILX983472516",
+        "bbox": [
+          63,
+          758,
+          343,
+          784
+        ],
+        "confidence": 0.8975293641551428,
+        "start_char": 321,
+        "end_char": 344
+      },
+      {
+        "text": "Group Number: 350712",
+        "bbox": [
+          60,
+          805,
+          307,
+          835
+        ],
+        "confidence": 0.5451658052328707,
+        "start_char": 345,
+        "end_char": 365
+      },
+      {
+        "text": "Policy Effective Date: 01/01/2023",
+        "bbox": [
+          60,
+          852,
+          403,
+          882
+        ],
+        "confidence": 0.5560670137868005,
+        "start_char": 366,
+        "end_char": 399
+      },
+      {
+        "text": "Payer ID: 03629",
+        "bbox": [
+          59,
+          901,
+          233,
+          927
+        ],
+        "confidence": 0.9968033594736536,
+        "start_char": 400,
+        "end_char": 415
+      }
+    ],
+    "text": "Name: Emily R_ Dawson DOB: March 12, 1975 Gender: Female Ethnicity: Caucasian Address: 1284 Pine Ridge Drive, Aurora, CO 80014 Phone: (303) 555-7294 Email: emily dawson75@example.com SSN: 527-84-1937 Insurance Information Insurance Provider: Blue Cross Blue Shield of Illinois (BCBSI Plan Type: Blue Choice Preferred PPO Member ID: ILX983472516 Group Number: 350712 Policy Effective Date: 01/01/2023 Payer ID: 03629"
+  },
+  {
+    "bbox": [
+      316,
+      470,
+      941,
+      1185
+    ],
+    "word_boxes": [
+      {
+        "text": "Email: emily dawson75@example.com",
+        "bbox": [
+          320,
+          500,
+          716,
+          526
+        ],
+        "confidence": 0.9133779871341274,
+        "start_char": 0,
+        "end_char": 33
+      },
+      {
+        "text": "SSN: 527-84-1937",
+        "bbox": [
+          318,
+          546,
+          512,
+          572
+        ],
+        "confidence": 0.4773082356661932,
+        "start_char": 34,
+        "end_char": 50
+      },
+      {
+        "text": "Insurance Information",
+        "bbox": [
+          316,
+          612,
+          584,
+          641
+        ],
+        "confidence": 0.8397714988041787,
+        "start_char": 51,
+        "end_char": 72
+      },
+      {
+        "text": "Insurance Provider: Blue Cross Blue Shield of Illinois (BCBSI",
+        "bbox": [
+          318,
+          664,
+          941,
+          690
+        ],
+        "confidence": 0.9366448544109902,
+        "start_char": 73,
+        "end_char": 134
+      },
+      {
+        "text": "Plan Type: Blue Choice Preferred PPO",
+        "bbox": [
+          320,
+          712,
+          720,
+          740
+        ],
+        "confidence": 0.7872915109387311,
+        "start_char": 135,
+        "end_char": 171
+      },
+      {
+        "text": "Member ID: ILX983472516",
+        "bbox": [
+          320,
+          758,
+          600,
+          784
+        ],
+        "confidence": 0.8975293641551428,
+        "start_char": 172,
+        "end_char": 195
+      },
+      {
+        "text": "Group Number: 350712",
+        "bbox": [
+          317,
+          806,
+          564,
+          835
+        ],
+        "confidence": 0.8780607783578753,
+        "start_char": 196,
+        "end_char": 216
+      },
+      {
+        "text": "Policy Effective Date: 01/01/2023",
+        "bbox": [
+          317,
+          852,
+          660,
+          882
+        ],
+        "confidence": 0.5560670137868005,
+        "start_char": 217,
+        "end_char": 250
+      },
+      {
+        "text": "Payer ID: 03629",
+        "bbox": [
+          316,
+          900,
+          492,
+          932
+        ],
+        "confidence": 0.8996676798409285,
+        "start_char": 251,
+        "end_char": 266
+      },
+      {
+        "text": "Medical Details",
+        "bbox": [
+          322,
+          968,
+          504,
+          996
+        ],
+        "confidence": 0.9419445224308077,
+        "start_char": 267,
+        "end_char": 282
+      },
+      {
+        "text": "Primary Diagnosis: Stage",
+        "bbox": [
+          319,
+          1018,
+          584,
+          1049
+        ],
+        "confidence": 0.649507102107059,
+        "start_char": 283,
+        "end_char": 307
+      },
+      {
+        "text": "Invasive Ductal Carcinoma (Left",
+        "bbox": [
+          602,
+          1020,
+          934,
+          1048
+        ],
+        "confidence": 0.6993424099935246,
+        "start_char": 308,
+        "end_char": 339
+      },
+      {
+        "text": "ICD-10 Code: C50.912",
+        "bbox": [
+          318,
+          1065,
+          557,
+          1092
+        ],
+        "confidence": 0.6920314391967984,
+        "start_char": 340,
+        "end_char": 360
+      },
+      {
+        "text": "Date of Diagnosis: May 22, 2025",
+        "bbox": [
+          320,
+          1112,
+          658,
+          1142
+        ],
+        "confidence": 0.6813380654472393,
+        "start_char": 361,
+        "end_char": 392
+      },
+      {
+        "text": "Oncoloqist: Dr. Marissa Greene_",
+        "bbox": [
+          317,
+          1159,
+          644,
+          1185
+        ],
+        "confidence": 0.8296055285139733,
+        "start_char": 393,
+        "end_char": 424
+      },
+      {
+        "text": "MD (NPI: 1789932041",
+        "bbox": [
+          652,
+          1159,
+          884,
+          1185
+        ],
+        "confidence": 0.7966679126615144,
+        "start_char": 425,
+        "end_char": 444
+      }
+    ],
+    "text": "Email: emily dawson75@example.com SSN: 527-84-1937 Insurance Information Insurance Provider: Blue Cross Blue Shield of Illinois (BCBSI Plan Type: Blue Choice Preferred PPO Member ID: ILX983472516 Group Number: 350712 Policy Effective Date: 01/01/2023 Payer ID: 03629 Medical Details Primary Diagnosis: Stage Invasive Ductal Carcinoma (Left ICD-10 Code: C50.912 Date of Diagnosis: May 22, 2025 Oncoloqist: Dr. Marissa Greene_ MD (NPI: 1789932041"
+  }
+]

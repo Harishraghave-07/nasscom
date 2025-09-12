@@ -1,0 +1,189 @@
+[
+  {
+    "start": 13,
+    "end": 33,
+    "confidence": 1.0,
+    "entity_type": "EMAIL_ADDRESS",
+    "text": "dawson75@example.com",
+    "meta": {
+      "page": 1,
+      "source": "pipeline_page_text"
+    }
+  },
+  {
+    "start": 434,
+    "end": 444,
+    "confidence": 1.0,
+    "entity_type": "UK_NHS",
+    "text": "1789932041",
+    "meta": {
+      "page": 1,
+      "source": "pipeline_page_text"
+    }
+  },
+  {
+    "start": 240,
+    "end": 250,
+    "confidence": 0.95,
+    "entity_type": "DATE_TIME",
+    "text": "01/01/2023",
+    "meta": {
+      "page": 1,
+      "source": "pipeline_page_text"
+    }
+  },
+  {
+    "start": 0,
+    "end": 5,
+    "confidence": 0.85,
+    "entity_type": "PERSON",
+    "text": "Email",
+    "meta": {
+      "page": 1,
+      "source": "pipeline_page_text"
+    }
+  },
+  {
+    "start": 39,
+    "end": 50,
+    "confidence": 0.85,
+    "entity_type": "US_SSN",
+    "text": "527-84-1937",
+    "meta": {
+      "page": 1,
+      "source": "pipeline_page_text"
+    }
+  },
+  {
+    "start": 46,
+    "end": 50,
+    "confidence": 0.85,
+    "entity_type": "DATE_TIME",
+    "text": "1937",
+    "meta": {
+      "page": 1,
+      "source": "pipeline_page_text"
+    }
+  },
+  {
+    "start": 119,
+    "end": 127,
+    "confidence": 0.85,
+    "entity_type": "LOCATION",
+    "text": "Illinois",
+    "meta": {
+      "page": 1,
+      "source": "pipeline_page_text"
+    }
+  },
+  {
+    "start": 380,
+    "end": 386,
+    "confidence": 0.85,
+    "entity_type": "DATE_TIME",
+    "text": "May 22",
+    "meta": {
+      "page": 1,
+      "source": "pipeline_page_text"
+    }
+  },
+  {
+    "start": 388,
+    "end": 392,
+    "confidence": 0.85,
+    "entity_type": "DATE_TIME",
+    "text": "2025",
+    "meta": {
+      "page": 1,
+      "source": "pipeline_page_text"
+    }
+  },
+  {
+    "start": 409,
+    "end": 423,
+    "confidence": 0.85,
+    "entity_type": "PERSON",
+    "text": "Marissa Greene",
+    "meta": {
+      "page": 1,
+      "source": "pipeline_page_text"
+    }
+  },
+  {
+    "start": 425,
+    "end": 427,
+    "confidence": 0.85,
+    "entity_type": "LOCATION",
+    "text": "MD",
+    "meta": {
+      "page": 1,
+      "source": "pipeline_page_text"
+    }
+  },
+  {
+    "start": 210,
+    "end": 216,
+    "confidence": 0.75,
+    "entity_type": "PHONE_NUMBER",
+    "text": "350712",
+    "meta": {
+      "page": 1,
+      "source": "pipeline_page_text"
+    }
+  },
+  {
+    "start": 22,
+    "end": 33,
+    "confidence": 0.5,
+    "entity_type": "URL",
+    "text": "example.com",
+    "meta": {
+      "page": 1,
+      "source": "pipeline_page_text"
+    }
+  },
+  {
+    "start": 353,
+    "end": 356,
+    "confidence": 0.3,
+    "entity_type": "US_DRIVER_LICENSE",
+    "text": "C50",
+    "meta": {
+      "page": 1,
+      "source": "pipeline_page_text"
+    }
+  },
+  {
+    "start": 434,
+    "end": 444,
+    "confidence": 0.05,
+    "entity_type": "US_BANK_NUMBER",
+    "text": "1789932041",
+    "meta": {
+      "page": 1,
+      "source": "pipeline_page_text"
+    }
+  },
+  {
+    "start": 210,
+    "end": 216,
+    "confidence": 0.01,
+    "entity_type": "US_DRIVER_LICENSE",
+    "text": "350712",
+    "meta": {
+      "page": 1,
+      "source": "pipeline_page_text"
+    }
+  },
+  {
+    "start": 434,
+    "end": 444,
+    "confidence": 0.01,
+    "entity_type": "US_DRIVER_LICENSE",
+    "text": "1789932041",
+    "meta": {
+      "page": 1,
+      "source": "pipeline_page_text"
+    }
+  }
+]

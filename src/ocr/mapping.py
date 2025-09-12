@@ -22,6 +22,11 @@ def _overlap(a_start: int, a_end: int, b_start: int, b_end: int) -> bool:
     return not (a_end <= b_start or a_start >= b_end)
 
 
+class MappingError(Exception):
+    """Raised when a detection cannot be mapped to an image bbox."""
+    pass
+
+
 def map_text_spans_to_image_bboxes(
     detections: List[Dict[str, Any]],
     word_boxes: List[Dict[str, Any]],
@@ -43,6 +48,13 @@ def map_text_spans_to_image_bboxes(
         [x1,y1,x2,y2] (integers) and `page_number` set.
     """
     out: List[Dict[str, Any]] = []
+
+    # helper: case-fold normalization for robust comparisons
+    def _norm(s: str) -> str:
+        try:
+            return (s or "").casefold().strip()
+        except Exception:
+            return (s or "").lower().strip()
 
     # normalize word_boxes: ensure bbox lists and optional char spans
     normalized_words = []
@@ -69,7 +81,7 @@ def map_text_spans_to_image_bboxes(
 
         matched_boxes: List[List[int]] = []
 
-        # 1) Prefer exact char-overlap mapping against word_boxes (deterministic)
+        # 1) Fast path: Prefer exact char-overlap mapping against word_boxes (deterministic)
         if start is not None and end is not None:
             for w in normalized_words:
                 ws = w.get("start_char")
@@ -85,12 +97,12 @@ def map_text_spans_to_image_bboxes(
 
         # 2) If no char-span match, fall back to cautious substring token matching
         if not matched_boxes and normalized_words:
-            det_text = (det.get("text") or "").strip().lower()
+            det_text = _norm(det.get("text") or "")
             if det_text:
                 # attempt to find contiguous sequences of word tokens that best
-                # match the detection text. This avoids accidental partial
-                # matches spread across unrelated tokens.
-                texts = [(w.get("text") or "").strip().lower() for w in normalized_words]
+                # match the detection text; use casefolded comparison to handle
+                # case and unicode normalization differences.
+                texts = [_norm(w.get("text") or "") for w in normalized_words]
                 n = len(texts)
                 for i in range(n):
                     if not texts[i]:
@@ -98,7 +110,8 @@ def map_text_spans_to_image_bboxes(
                     concat = texts[i]
                     boxes = [normalized_words[i].get("bbox")]
                     if concat == det_text or det_text in concat or concat in det_text:
-                        matched_boxes.append(boxes[0]) if boxes[0] else None
+                        if boxes[0]:
+                            matched_boxes.append(boxes[0])
                         break
                     for j in range(i + 1, n):
                         if not texts[j]:
@@ -111,13 +124,28 @@ def map_text_spans_to_image_bboxes(
                     if matched_boxes:
                         break
 
-        # Aggregate matched boxes into union or fall back to region bbox
-        bbox = _union_boxes(matched_boxes) if matched_boxes else (list(region_bbox) if region_bbox else None)
-        if bbox:
-            det["bbox"] = [int(x) for x in bbox]
-        else:
-            det.setdefault("bbox", region_bbox)
-        det.setdefault("page_number", int(page_number or 1))
-        out.append(det)
+    # Aggregate matched boxes into union.
+    bbox = _union_boxes(matched_boxes) if matched_boxes else None
+    if bbox:
+        det["bbox"] = [int(x) for x in bbox]
+    else:
+        # no fine-grained mapping found; consult SETTINGS.mapping.raise_on_fail
+        try:
+            from src.core.config import SETTINGS
+        except Exception:
+            SETTINGS = None
+
+        raise_on_fail = False
+        try:
+            if SETTINGS is not None and getattr(SETTINGS, "mapping", None) is not None:
+                raise_on_fail = bool(getattr(SETTINGS.mapping, "raise_on_fail", False))
+        except Exception:
+            raise_on_fail = False
+
+        if raise_on_fail:
+            raise MappingError(f"Failed to map detection '{det.get('text')}' start={start} end={end} to word boxes; region_bbox={region_bbox}")
+        det.setdefault("bbox", region_bbox)
+    det.setdefault("page_number", int(page_number or 1))
+    out.append(det)
 
     return out

@@ -86,6 +86,13 @@ class PresidioAnalyzer:
         if self._engine is not None:
             try:
                 results = self._engine.analyze(text=text, language="en")
+                # DEBUG: log presidio entities tuples (type, start, end, snippet)
+                try:
+                    logger.warning("DEBUG Presidio entities: %s",
+                                   [(getattr(e, 'entity_type', None) or getattr(e, 'label', None), int(getattr(e, 'start', None) or e.start), int(getattr(e, 'end', None) or e.end), text[int(getattr(e, 'start', 0)):int(getattr(e, 'end', 0))]) for e in results])
+                except Exception:
+                    logger.warning("DEBUG Presidio entities: (failed to render entity tuples)")
+
                 for r in results:
                     detections.append({
                         "start": int(getattr(r, "start", None) or r.start),

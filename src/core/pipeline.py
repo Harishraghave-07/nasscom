@@ -463,6 +463,15 @@ class ClinicalImageMaskingPipeline:
                     # TextDetector.extract_text_content normalization.
                     page_text = " ".join([(r.get("text") or "").strip() for r in regions or []])
 
+                # Ensure we expose the page_text built from visible lines (raw_line)
+                # so that downstream analyzers see the same line breaks and
+                # punctuation the user sees on the page.
+                if isinstance(meta, dict):
+                    # build page_text from raw_line if available
+                    try:
+                        page_text = "\n".join([r.get("raw_line") if r.get("raw_line") is not None else (r.get("text") or "") for r in regions or []])
+                    except Exception:
+                        page_text = " ".join([(r.get("text") or "").strip() for r in regions or []])
                 # lazy import of presidio anonymizer classes
                 from presidio_anonymizer import AnonymizerEngine, OperatorConfig  # type: ignore
                 from src.integration.policy_matrix import POLICY_MATRIX
@@ -639,6 +648,18 @@ class ClinicalImageMaskingPipeline:
             regions = self.ocr.detect_text_regions(image)
             # filter using the OCR component's filter method
             accepted, rejected = self.ocr.filter_by_confidence(regions, self.config.ocr.confidence_threshold, slack=float(self.config.ocr.confidence_slack))
+            # Enrich accepted regions with OCR text and per-word boxes so
+            # downstream stages (PHI detection/mapping) receive the exact
+            # visible line text and offsets. This ensures `raw_line` and
+            # `word_boxes` are present on returned regions.
+            try:
+                if accepted:
+                    enriched = self.ocr.extract_text_content(image, accepted)
+                    # preserve region-level metadata but prefer enriched fields
+                    # returned by extract_text_content
+                    accepted = enriched
+            except Exception:
+                logger.exception("Failed to enrich accepted OCR regions with text content")
             # If no regions passed the coarse region-level threshold but OCR can
             # provide word-level boxes with higher confidence, accept regions
             # that contain any high-confidence word boxes so we can map PHI to
@@ -781,12 +802,36 @@ class ClinicalImageMaskingPipeline:
             except Exception:
                 self.logger.debug("merge_adjacent_regions not available or failed for region=%s", r.get("bbox"))
 
-            # attach bbox and record
+            # attach bbox and record using canonical mapping utility
+            try:
+                from src.ocr.mapping import map_text_spans_to_image_bboxes, MappingError
+            except Exception:
+                map_text_spans_to_image_bboxes = None
+                MappingError = Exception
+
             for d in legacy_detections:
-                # try to map detection to word-level bbox when possible
+                # prefer numeric spans when present; otherwise use detection text
                 det_text = d.get("text") or d.get("entity") or d.get("phrase") or ""
-                mapped = _find_bbox_from_word_boxes(r, det_text)
-                d["bbox"] = mapped or r.get("bbox")
+                start = d.get("start") if d.get("start") is not None else d.get("start_char")
+                end = d.get("end") if d.get("end") is not None else d.get("end_char")
+                mapped_bbox = None
+                if map_text_spans_to_image_bboxes is not None:
+                    try:
+                        # build a single-detection list and pass region's word_boxes
+                        det_list = [{"text": det_text, "start": start, "end": end}]
+                        wb = r.get("word_boxes") or []
+                        mapped = map_text_spans_to_image_bboxes(det_list, wb, r.get("bbox"), page_number=1)
+                        if mapped and mapped[0].get("bbox"):
+                            mapped_bbox = mapped[0].get("bbox")
+                    except MappingError:
+                        # surface as exception if configured to do so
+                        if getattr(SETTINGS, "mapping", None) and getattr(SETTINGS.mapping, "raise_on_fail", False):
+                            raise
+                        mapped_bbox = None
+                    except Exception:
+                        mapped_bbox = None
+
+                d["bbox"] = mapped_bbox or r.get("bbox")
             legacy_report["detections"].extend(legacy_detections)
 
             # If canary enabled, run Presidio too (either shadow or active)
@@ -799,8 +844,24 @@ class ClinicalImageMaskingPipeline:
                     presidio_detections = analyzer.detect_phi_in_text(t, {"surrounding_text": context.get("surrounding_text", "")})
                     for d in presidio_detections:
                         det_text = d.get("text") or d.get("entity_type") or d.get("entity") or ""
-                        mapped = _find_bbox_from_word_boxes(r, det_text)
-                        d["bbox"] = mapped or r.get("bbox")
+                        start = d.get("start") if d.get("start") is not None else d.get("start_char")
+                        end = d.get("end") if d.get("end") is not None else d.get("end_char")
+                        mapped_bbox = None
+                        if map_text_spans_to_image_bboxes is not None:
+                            try:
+                                det_list = [{"text": det_text, "start": start, "end": end}]
+                                wb = r.get("word_boxes") or []
+                                mapped = map_text_spans_to_image_bboxes(det_list, wb, r.get("bbox"), page_number=1)
+                                if mapped and mapped[0].get("bbox"):
+                                    mapped_bbox = mapped[0].get("bbox")
+                            except MappingError:
+                                if getattr(SETTINGS, "mapping", None) and getattr(SETTINGS.mapping, "raise_on_fail", False):
+                                    raise
+                                mapped_bbox = None
+                            except Exception:
+                                mapped_bbox = None
+
+                        d["bbox"] = mapped_bbox or r.get("bbox")
                     presidio_report["detections"].extend(presidio_detections)
                 except Exception:
                     self.logger.exception("Presidio analyzer failed for region=%s", r.get("bbox"))
@@ -857,6 +918,14 @@ class ClinicalImageMaskingPipeline:
                 raise RuntimeError("Inpainter not initialized")
         # Delegate to unified masking stage for a single, authoritative flow
         try:
+            # DEBUG: log masker input regions and bboxes before inpainting
+            try:
+                self.logger.warning("DEBUG Masker input: %d regions → %s",
+                                    len(phi_regions),
+                                    [(d.get('entity_type'), d.get('bbox')) for d in (phi_regions or [])[:10]])
+            except Exception:
+                self.logger.warning("DEBUG Masker input: (failed to log phi_regions)")
+
             masked_img, meta = inpainter.unified_masking_stage(
                 image,
                 phi_regions,
