@@ -580,12 +580,19 @@ class PHIClassifier:
         pipeline (SETTINGS.setup_logging) should ensure redaction when
         writing to persistent logs.
         """
+        # Respect global audit flag
+        if not getattr(self.app_config, "enable_audit_logging", True):
+            logger.debug("Audit logging disabled; skipping log_phi_detection")
+            return
         try:
             rec = {
                 "image_id": image_id,
                 "timestamp": (timestamp or datetime.utcnow()).isoformat(),
                 "detection": detection,
             }
+            # redact detection text if configured
+            if getattr(self.config, "audit_redact_snippets", False) and isinstance(rec.get("detection"), dict):
+                rec["detection"]["text"] = "[REDACTED_SNIPPET]"
             self.audit_logger.info(json.dumps(rec))
         except Exception:
             logger.exception("Failed to write PHI audit record")
@@ -603,6 +610,10 @@ class PHIClassifier:
         - method_name: string indicating which detector produced the results
         - context: optional metadata (image_id, page, bbox, surrounding_text)
         """
+        # Respect global audit flag
+        if not getattr(self.app_config, "enable_audit_logging", True):
+            logger.debug("Audit logging disabled; skipping audit_log")
+            return
         try:
             # Optionally redact detection text snippets before persisting
             redacted = []

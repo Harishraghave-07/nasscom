@@ -82,7 +82,17 @@ class ImageInpainter:
 
         self._cache_dir = Path(temp_dir) / "inpaint_cache"
         try:
-            self._cache_dir.mkdir(parents=True, exist_ok=True)
+            # respect global in-memory temp setting to avoid persistent cache
+            use_in_memory = False
+            try:
+                use_in_memory = bool(getattr(SETTINGS.processing, "use_in_memory_temp", False))
+            except Exception:
+                use_in_memory = False
+            if not use_in_memory:
+                self._cache_dir.mkdir(parents=True, exist_ok=True)
+            else:
+                # when in-memory, keep cache_dir as Path but do not create it
+                logger.debug("In-memory temp enabled; skipping creation of inpaint cache dir %s", self._cache_dir)
         except Exception:
             logger.exception("Failed to create cache dir %s", self._cache_dir)
         self._perf = {"images": 0, "total_time_s": 0.0}

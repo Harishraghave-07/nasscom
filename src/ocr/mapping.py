@@ -5,7 +5,83 @@ detections with character offsets (relative to a provided region text) and
 per-word OCR boxes that include character offsets. It returns detections
 enriched with a canonical `bbox` (x1,y1,x2,y2) and `page_number`.
 """
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
+from dataclasses import dataclass
+
+
+@dataclass
+class TokenAlignment:
+    orig: str
+    new: str
+
+    def __post_init__(self):
+        # Build index maps using a conservative tokenizer (whitespace + punctuation)
+        self.orig_tokens = self._tokenize_with_spans(self.orig)
+        self.new_tokens = self._tokenize_with_spans(self.new)
+        # Compute mapping from orig char index -> new char index using token alignment
+        self.orig_to_new = self._build_char_map()
+
+    def _tokenize_with_spans(self, s: str) -> List[Dict[str, Any]]:
+        import re
+
+        tokens: List[Dict[str, Any]] = []
+        for m in re.finditer(r"\S+", s or ""):
+            tokens.append({"text": m.group(0), "start": m.start(), "end": m.end()})
+        return tokens
+
+    def _build_char_map(self) -> List[int]:
+        # Initialize with conservative mapping: map each orig char to the same index if possible
+        orig_len = len(self.orig or "")
+        new_len = len(self.new or "")
+        orig_to_new = [0] * (orig_len + 1)
+
+        # Greedy token alignment by normalized token text
+        i_new = 0
+        for t_orig in self.orig_tokens:
+            found = False
+            for j in range(i_new, len(self.new_tokens)):
+                if self._norm(t_orig["text"]) == self._norm(self.new_tokens[j]["text"]):
+                    # align token-level: map each char in orig token range to corresponding new token start offset
+                    new_token_start = self.new_tokens[j]["start"]
+                    for idx in range(t_orig["start"], t_orig["end"] + 1):
+                        # clamp within new length
+                        orig_to_new[idx] = min(new_len, new_token_start + (idx - t_orig["start"]))
+                    i_new = j + 1
+                    found = True
+                    break
+            if not found:
+                # token not found; conservatively map to current new index
+                for idx in range(t_orig["start"], t_orig["end"] + 1):
+                    orig_to_new[idx] = min(new_len, i_new and self.new_tokens[i_new - 1]["end"] or 0)
+
+        # final sentinel mapping
+        orig_to_new[len(self.orig or "")] = len(self.new or "")
+        # fill gaps deterministically
+        last = 0
+        for i in range(len(orig_to_new)):
+            if orig_to_new[i] == 0 and i != 0:
+                orig_to_new[i] = last
+            else:
+                last = orig_to_new[i]
+
+        return orig_to_new
+
+    def _norm(self, s: str) -> str:
+        try:
+            return s.strip().casefold()
+        except Exception:
+            return (s or "").strip().lower()
+
+    def map_span(self, s: int, e: int) -> Tuple[int, int]:
+        s = max(0, min(len(self.orig or ""), int(s or 0)))
+        e = max(0, min(len(self.orig or ""), int(e or 0)))
+        new_s = int(self.orig_to_new[s])
+        if e > 0:
+            new_e = int(self.orig_to_new[max(0, e - 1)]) + 1
+        else:
+            new_e = int(self.orig_to_new[0])
+        return new_s, new_e
+
 
 
 def _union_boxes(boxes: List[List[int]]) -> Optional[List[int]]:

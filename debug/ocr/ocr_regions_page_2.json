@@ -1360,5 +1360,1496 @@
       }
     ],
     "text": "Lisinopril daily Tamoxifen 2Omg daily Recent Lab & Imaging Results Mammogram (5/10/2025): Suspicious mass, Bl-RADS 5 Biopsy Report (5/21/2025): Positive for malignancy BRCA 1/BRCA2: Negative Treatment Plan Surgery Scheduled: Lumpectomy 8/5/2025) Chemotherapy (Post-op): 4 cycles of Adriamycin + Cyclophe Radiation Therapy: Pending surgical margins Physician Signature Signed Electronically by: Dr: Marissa Greene, MD NPI: 1789932041 Date: July 21, 2025 1Omg"
+  },
+  {
+    "bbox": [
+      60,
+      112,
+      683,
+      927
+    ],
+    "word_boxes": [
+      {
+        "text": "Lisinopril",
+        "bbox": [
+          76,
+          164,
+          174,
+          190
+        ],
+        "confidence": 0.9999126908675556,
+        "start_char": 0,
+        "end_char": 10
+      },
+      {
+        "text": "daily",
+        "bbox": [
+          238,
+          164,
+          290,
+          192
+        ],
+        "confidence": 0.9999948287329671,
+        "start_char": 11,
+        "end_char": 16
+      },
+      {
+        "text": "Tamoxifen 2Omg daily",
+        "bbox": [
+          78,
+          210,
+          304,
+          240
+        ],
+        "confidence": 0.9494091919262359,
+        "start_char": 17,
+        "end_char": 37
+      },
+      {
+        "text": "Recent Lab & Imaging Results",
+        "bbox": [
+          62,
+          276,
+          426,
+          308
+        ],
+        "confidence": 0.9627037792266915,
+        "start_char": 38,
+        "end_char": 66
+      },
+      {
+        "text": "Mammogram (5/10/2025): Suspicious mass, Bl-RADS 5",
+        "bbox": [
+          76,
+          323,
+          653,
+          359
+        ],
+        "confidence": 0.7679608792685604,
+        "start_char": 67,
+        "end_char": 116
+      },
+      {
+        "text": "Biopsy Report (5/21/2025): Positive for malignancy",
+        "bbox": [
+          73,
+          371,
+          599,
+          408
+        ],
+        "confidence": 0.9002279355573025,
+        "start_char": 117,
+        "end_char": 167
+      },
+      {
+        "text": "BRCA 1/BRCA2: Negative",
+        "bbox": [
+          78,
+          422,
+          346,
+          452
+        ],
+        "confidence": 0.5036394470109735,
+        "start_char": 168,
+        "end_char": 190
+      },
+      {
+        "text": "Treatment Plan",
+        "bbox": [
+          61,
+          487,
+          244,
+          517
+        ],
+        "confidence": 0.7508846866674412,
+        "start_char": 191,
+        "end_char": 205
+      },
+      {
+        "text": "Surgery Scheduled: Lumpectomy",
+        "bbox": [
+          74,
+          539,
+          422,
+          572
+        ],
+        "confidence": 0.922358105931264,
+        "start_char": 206,
+        "end_char": 235
+      },
+      {
+        "text": "8/5/2025)",
+        "bbox": [
+          430,
+          540,
+          532,
+          568
+        ],
+        "confidence": 0.762075542372228,
+        "start_char": 236,
+        "end_char": 245
+      },
+      {
+        "text": "Chemotherapy (Post-op): 4 cycles of Adriamycin + Cyclophe",
+        "bbox": [
+          77,
+          585,
+          683,
+          618
+        ],
+        "confidence": 0.7274087554116347,
+        "start_char": 246,
+        "end_char": 303
+      },
+      {
+        "text": "Radiation Therapy: Pending surgical margins",
+        "bbox": [
+          77,
+          631,
+          541,
+          667
+        ],
+        "confidence": 0.9618957713061757,
+        "start_char": 304,
+        "end_char": 347
+      },
+      {
+        "text": "Physician Signature",
+        "bbox": [
+          62,
+          701,
+          306,
+          734
+        ],
+        "confidence": 0.7562887596054543,
+        "start_char": 348,
+        "end_char": 367
+      },
+      {
+        "text": "Signed Electronically by: Dr: Marissa Greene, MD",
+        "bbox": [
+          62,
+          753,
+          570,
+          782
+        ],
+        "confidence": 0.7940255576358285,
+        "start_char": 368,
+        "end_char": 416
+      },
+      {
+        "text": "NPI:",
+        "bbox": [
+          62,
+          802,
+          112,
+          826
+        ],
+        "confidence": 0.998918354511261,
+        "start_char": 417,
+        "end_char": 421
+      },
+      {
+        "text": "1789932041",
+        "bbox": [
+          116,
+          799,
+          243,
+          825
+        ],
+        "confidence": 0.9309171448740818,
+        "start_char": 422,
+        "end_char": 432
+      },
+      {
+        "text": "Date: July 21, 2025",
+        "bbox": [
+          62,
+          848,
+          266,
+          878
+        ],
+        "confidence": 0.6579993525510653,
+        "start_char": 433,
+        "end_char": 452
+      },
+      {
+        "text": "1Omg",
+        "bbox": [
+          173,
+          158,
+          238,
+          193
+        ],
+        "confidence": 0.657156056834365,
+        "start_char": 453,
+        "end_char": 457
+      }
+    ],
+    "text": "Lisinopril daily Tamoxifen 2Omg daily Recent Lab & Imaging Results Mammogram (5/10/2025): Suspicious mass, Bl-RADS 5 Biopsy Report (5/21/2025): Positive for malignancy BRCA 1/BRCA2: Negative Treatment Plan Surgery Scheduled: Lumpectomy 8/5/2025) Chemotherapy (Post-op): 4 cycles of Adriamycin + Cyclophe Radiation Therapy: Pending surgical margins Physician Signature Signed Electronically by: Dr: Marissa Greene, MD NPI: 1789932041 Date: July 21, 2025 1Omg"
+  },
+  {
+    "bbox": [
+      60,
+      112,
+      683,
+      927
+    ],
+    "word_boxes": [
+      {
+        "text": "Lisinopril",
+        "bbox": [
+          76,
+          164,
+          174,
+          190
+        ],
+        "confidence": 0.9999126908675556,
+        "start_char": 0,
+        "end_char": 10
+      },
+      {
+        "text": "daily",
+        "bbox": [
+          238,
+          164,
+          290,
+          192
+        ],
+        "confidence": 0.9999948287329671,
+        "start_char": 11,
+        "end_char": 16
+      },
+      {
+        "text": "Tamoxifen 2Omg daily",
+        "bbox": [
+          78,
+          210,
+          304,
+          240
+        ],
+        "confidence": 0.9494091919262359,
+        "start_char": 17,
+        "end_char": 37
+      },
+      {
+        "text": "Recent Lab & Imaging Results",
+        "bbox": [
+          62,
+          276,
+          426,
+          308
+        ],
+        "confidence": 0.9627037792266915,
+        "start_char": 38,
+        "end_char": 66
+      },
+      {
+        "text": "Mammogram (5/10/2025): Suspicious mass, Bl-RADS 5",
+        "bbox": [
+          76,
+          323,
+          653,
+          359
+        ],
+        "confidence": 0.7679608792685604,
+        "start_char": 67,
+        "end_char": 116
+      },
+      {
+        "text": "Biopsy Report (5/21/2025): Positive for malignancy",
+        "bbox": [
+          73,
+          371,
+          599,
+          408
+        ],
+        "confidence": 0.9002279355573025,
+        "start_char": 117,
+        "end_char": 167
+      },
+      {
+        "text": "BRCA 1/BRCA2: Negative",
+        "bbox": [
+          78,
+          422,
+          346,
+          452
+        ],
+        "confidence": 0.5036394470109735,
+        "start_char": 168,
+        "end_char": 190
+      },
+      {
+        "text": "Treatment Plan",
+        "bbox": [
+          61,
+          487,
+          244,
+          517
+        ],
+        "confidence": 0.7508846866674412,
+        "start_char": 191,
+        "end_char": 205
+      },
+      {
+        "text": "Surgery Scheduled: Lumpectomy",
+        "bbox": [
+          74,
+          539,
+          422,
+          572
+        ],
+        "confidence": 0.922358105931264,
+        "start_char": 206,
+        "end_char": 235
+      },
+      {
+        "text": "8/5/2025)",
+        "bbox": [
+          430,
+          540,
+          532,
+          568
+        ],
+        "confidence": 0.762075542372228,
+        "start_char": 236,
+        "end_char": 245
+      },
+      {
+        "text": "Chemotherapy (Post-op): 4 cycles of Adriamycin + Cyclophe",
+        "bbox": [
+          77,
+          585,
+          683,
+          618
+        ],
+        "confidence": 0.7274087554116347,
+        "start_char": 246,
+        "end_char": 303
+      },
+      {
+        "text": "Radiation Therapy: Pending surgical margins",
+        "bbox": [
+          77,
+          631,
+          541,
+          667
+        ],
+        "confidence": 0.9618957713061757,
+        "start_char": 304,
+        "end_char": 347
+      },
+      {
+        "text": "Physician Signature",
+        "bbox": [
+          62,
+          701,
+          306,
+          734
+        ],
+        "confidence": 0.7562887596054543,
+        "start_char": 348,
+        "end_char": 367
+      },
+      {
+        "text": "Signed Electronically by: Dr: Marissa Greene, MD",
+        "bbox": [
+          62,
+          753,
+          570,
+          782
+        ],
+        "confidence": 0.7940255576358285,
+        "start_char": 368,
+        "end_char": 416
+      },
+      {
+        "text": "NPI:",
+        "bbox": [
+          62,
+          802,
+          112,
+          826
+        ],
+        "confidence": 0.998918354511261,
+        "start_char": 417,
+        "end_char": 421
+      },
+      {
+        "text": "1789932041",
+        "bbox": [
+          116,
+          799,
+          243,
+          825
+        ],
+        "confidence": 0.9309171448740818,
+        "start_char": 422,
+        "end_char": 432
+      },
+      {
+        "text": "Date: July 21, 2025",
+        "bbox": [
+          62,
+          848,
+          266,
+          878
+        ],
+        "confidence": 0.6579993525510653,
+        "start_char": 433,
+        "end_char": 452
+      },
+      {
+        "text": "1Omg",
+        "bbox": [
+          173,
+          158,
+          238,
+          193
+        ],
+        "confidence": 0.657156056834365,
+        "start_char": 453,
+        "end_char": 457
+      }
+    ],
+    "text": "Lisinopril daily Tamoxifen 2Omg daily Recent Lab & Imaging Results Mammogram (5/10/2025): Suspicious mass, Bl-RADS 5 Biopsy Report (5/21/2025): Positive for malignancy BRCA 1/BRCA2: Negative Treatment Plan Surgery Scheduled: Lumpectomy 8/5/2025) Chemotherapy (Post-op): 4 cycles of Adriamycin + Cyclophe Radiation Therapy: Pending surgical margins Physician Signature Signed Electronically by: Dr: Marissa Greene, MD NPI: 1789932041 Date: July 21, 2025 1Omg"
+  },
+  {
+    "bbox": [
+      60,
+      112,
+      683,
+      927
+    ],
+    "word_boxes": [
+      {
+        "text": "Lisinopril",
+        "bbox": [
+          76,
+          164,
+          174,
+          190
+        ],
+        "confidence": 0.9999126908675556,
+        "start_char": 0,
+        "end_char": 10
+      },
+      {
+        "text": "daily",
+        "bbox": [
+          238,
+          164,
+          290,
+          192
+        ],
+        "confidence": 0.9999948287329671,
+        "start_char": 11,
+        "end_char": 16
+      },
+      {
+        "text": "Tamoxifen 2Omg daily",
+        "bbox": [
+          78,
+          210,
+          304,
+          240
+        ],
+        "confidence": 0.9494091919262359,
+        "start_char": 17,
+        "end_char": 37
+      },
+      {
+        "text": "Recent Lab & Imaging Results",
+        "bbox": [
+          62,
+          276,
+          426,
+          308
+        ],
+        "confidence": 0.9627037792266915,
+        "start_char": 38,
+        "end_char": 66
+      },
+      {
+        "text": "Mammogram (5/10/2025): Suspicious mass, Bl-RADS 5",
+        "bbox": [
+          76,
+          323,
+          653,
+          359
+        ],
+        "confidence": 0.7679608792685604,
+        "start_char": 67,
+        "end_char": 116
+      },
+      {
+        "text": "Biopsy Report (5/21/2025): Positive for malignancy",
+        "bbox": [
+          73,
+          371,
+          599,
+          408
+        ],
+        "confidence": 0.9002279355573025,
+        "start_char": 117,
+        "end_char": 167
+      },
+      {
+        "text": "BRCA 1/BRCA2: Negative",
+        "bbox": [
+          78,
+          422,
+          346,
+          452
+        ],
+        "confidence": 0.5036394470109735,
+        "start_char": 168,
+        "end_char": 190
+      },
+      {
+        "text": "Treatment Plan",
+        "bbox": [
+          61,
+          487,
+          244,
+          517
+        ],
+        "confidence": 0.7508846866674412,
+        "start_char": 191,
+        "end_char": 205
+      },
+      {
+        "text": "Surgery Scheduled: Lumpectomy",
+        "bbox": [
+          74,
+          539,
+          422,
+          572
+        ],
+        "confidence": 0.922358105931264,
+        "start_char": 206,
+        "end_char": 235
+      },
+      {
+        "text": "8/5/2025)",
+        "bbox": [
+          430,
+          540,
+          532,
+          568
+        ],
+        "confidence": 0.762075542372228,
+        "start_char": 236,
+        "end_char": 245
+      },
+      {
+        "text": "Chemotherapy (Post-op): 4 cycles of Adriamycin + Cyclophe",
+        "bbox": [
+          77,
+          585,
+          683,
+          618
+        ],
+        "confidence": 0.7274087554116347,
+        "start_char": 246,
+        "end_char": 303
+      },
+      {
+        "text": "Radiation Therapy: Pending surgical margins",
+        "bbox": [
+          77,
+          631,
+          541,
+          667
+        ],
+        "confidence": 0.9618957713061757,
+        "start_char": 304,
+        "end_char": 347
+      },
+      {
+        "text": "Physician Signature",
+        "bbox": [
+          62,
+          701,
+          306,
+          734
+        ],
+        "confidence": 0.7562887596054543,
+        "start_char": 348,
+        "end_char": 367
+      },
+      {
+        "text": "Signed Electronically by: Dr: Marissa Greene, MD",
+        "bbox": [
+          62,
+          753,
+          570,
+          782
+        ],
+        "confidence": 0.7940255576358285,
+        "start_char": 368,
+        "end_char": 416
+      },
+      {
+        "text": "NPI:",
+        "bbox": [
+          62,
+          802,
+          112,
+          826
+        ],
+        "confidence": 0.998918354511261,
+        "start_char": 417,
+        "end_char": 421
+      },
+      {
+        "text": "1789932041",
+        "bbox": [
+          116,
+          799,
+          243,
+          825
+        ],
+        "confidence": 0.9309171448740818,
+        "start_char": 422,
+        "end_char": 432
+      },
+      {
+        "text": "Date: July 21, 2025",
+        "bbox": [
+          62,
+          848,
+          266,
+          878
+        ],
+        "confidence": 0.6579993525510653,
+        "start_char": 433,
+        "end_char": 452
+      },
+      {
+        "text": "1Omg",
+        "bbox": [
+          173,
+          158,
+          238,
+          193
+        ],
+        "confidence": 0.657156056834365,
+        "start_char": 453,
+        "end_char": 457
+      }
+    ],
+    "text": "Lisinopril daily Tamoxifen 2Omg daily Recent Lab & Imaging Results Mammogram (5/10/2025): Suspicious mass, Bl-RADS 5 Biopsy Report (5/21/2025): Positive for malignancy BRCA 1/BRCA2: Negative Treatment Plan Surgery Scheduled: Lumpectomy 8/5/2025) Chemotherapy (Post-op): 4 cycles of Adriamycin + Cyclophe Radiation Therapy: Pending surgical margins Physician Signature Signed Electronically by: Dr: Marissa Greene, MD NPI: 1789932041 Date: July 21, 2025 1Omg"
+  },
+  {
+    "bbox": [
+      60,
+      112,
+      683,
+      927
+    ],
+    "word_boxes": [
+      {
+        "text": "Lisinopril",
+        "bbox": [
+          76,
+          164,
+          174,
+          190
+        ],
+        "confidence": 0.9999126908675556,
+        "start_char": 0,
+        "end_char": 10
+      },
+      {
+        "text": "daily",
+        "bbox": [
+          238,
+          164,
+          290,
+          192
+        ],
+        "confidence": 0.9999948287329671,
+        "start_char": 11,
+        "end_char": 16
+      },
+      {
+        "text": "Tamoxifen 2Omg daily",
+        "bbox": [
+          78,
+          210,
+          304,
+          240
+        ],
+        "confidence": 0.9494091919262359,
+        "start_char": 17,
+        "end_char": 37
+      },
+      {
+        "text": "Recent Lab & Imaging Results",
+        "bbox": [
+          62,
+          276,
+          426,
+          308
+        ],
+        "confidence": 0.9627037792266915,
+        "start_char": 38,
+        "end_char": 66
+      },
+      {
+        "text": "Mammogram (5/10/2025): Suspicious mass, Bl-RADS 5",
+        "bbox": [
+          76,
+          323,
+          653,
+          359
+        ],
+        "confidence": 0.7679608792685604,
+        "start_char": 67,
+        "end_char": 116
+      },
+      {
+        "text": "Biopsy Report (5/21/2025): Positive for malignancy",
+        "bbox": [
+          73,
+          371,
+          599,
+          408
+        ],
+        "confidence": 0.9002279355573025,
+        "start_char": 117,
+        "end_char": 167
+      },
+      {
+        "text": "BRCA 1/BRCA2: Negative",
+        "bbox": [
+          78,
+          422,
+          346,
+          452
+        ],
+        "confidence": 0.5036394470109735,
+        "start_char": 168,
+        "end_char": 190
+      },
+      {
+        "text": "Treatment Plan",
+        "bbox": [
+          61,
+          487,
+          244,
+          517
+        ],
+        "confidence": 0.7508846866674412,
+        "start_char": 191,
+        "end_char": 205
+      },
+      {
+        "text": "Surgery Scheduled: Lumpectomy",
+        "bbox": [
+          74,
+          539,
+          422,
+          572
+        ],
+        "confidence": 0.922358105931264,
+        "start_char": 206,
+        "end_char": 235
+      },
+      {
+        "text": "8/5/2025)",
+        "bbox": [
+          430,
+          540,
+          532,
+          568
+        ],
+        "confidence": 0.762075542372228,
+        "start_char": 236,
+        "end_char": 245
+      },
+      {
+        "text": "Chemotherapy (Post-op): 4 cycles of Adriamycin + Cyclophe",
+        "bbox": [
+          77,
+          585,
+          683,
+          618
+        ],
+        "confidence": 0.7274087554116347,
+        "start_char": 246,
+        "end_char": 303
+      },
+      {
+        "text": "Radiation Therapy: Pending surgical margins",
+        "bbox": [
+          77,
+          631,
+          541,
+          667
+        ],
+        "confidence": 0.9618957713061757,
+        "start_char": 304,
+        "end_char": 347
+      },
+      {
+        "text": "Physician Signature",
+        "bbox": [
+          62,
+          701,
+          306,
+          734
+        ],
+        "confidence": 0.7562887596054543,
+        "start_char": 348,
+        "end_char": 367
+      },
+      {
+        "text": "Signed Electronically by: Dr: Marissa Greene, MD",
+        "bbox": [
+          62,
+          753,
+          570,
+          782
+        ],
+        "confidence": 0.7940255576358285,
+        "start_char": 368,
+        "end_char": 416
+      },
+      {
+        "text": "NPI:",
+        "bbox": [
+          62,
+          802,
+          112,
+          826
+        ],
+        "confidence": 0.998918354511261,
+        "start_char": 417,
+        "end_char": 421
+      },
+      {
+        "text": "1789932041",
+        "bbox": [
+          116,
+          799,
+          243,
+          825
+        ],
+        "confidence": 0.9309171448740818,
+        "start_char": 422,
+        "end_char": 432
+      },
+      {
+        "text": "Date: July 21, 2025",
+        "bbox": [
+          62,
+          848,
+          266,
+          878
+        ],
+        "confidence": 0.6579993525510653,
+        "start_char": 433,
+        "end_char": 452
+      },
+      {
+        "text": "1Omg",
+        "bbox": [
+          173,
+          158,
+          238,
+          193
+        ],
+        "confidence": 0.657156056834365,
+        "start_char": 453,
+        "end_char": 457
+      }
+    ],
+    "text": "Lisinopril daily Tamoxifen 2Omg daily Recent Lab & Imaging Results Mammogram (5/10/2025): Suspicious mass, Bl-RADS 5 Biopsy Report (5/21/2025): Positive for malignancy BRCA 1/BRCA2: Negative Treatment Plan Surgery Scheduled: Lumpectomy 8/5/2025) Chemotherapy (Post-op): 4 cycles of Adriamycin + Cyclophe Radiation Therapy: Pending surgical margins Physician Signature Signed Electronically by: Dr: Marissa Greene, MD NPI: 1789932041 Date: July 21, 2025 1Omg"
+  },
+  {
+    "bbox": [
+      317,
+      432,
+      941,
+      1185
+    ],
+    "word_boxes": [
+      {
+        "text": "BROAIBRCAZ: Negalive",
+        "bbox": [
+          334,
+          432,
+          601,
+          450
+        ],
+        "confidence": 0.4408945096449736,
+        "start_char": 0,
+        "end_char": 20
+      },
+      {
+        "text": "Treatment Plan",
+        "bbox": [
+          318,
+          487,
+          501,
+          517
+        ],
+        "confidence": 0.7508846866674412,
+        "start_char": 21,
+        "end_char": 35
+      },
+      {
+        "text": "Surgery Scheduled: Lumpectomy (8/5/2025)",
+        "bbox": [
+          331,
+          539,
+          789,
+          572
+        ],
+        "confidence": 0.625630858257626,
+        "start_char": 36,
+        "end_char": 76
+      },
+      {
+        "text": "Chemotherapy (Post-op): 4 cycles of Adriamycin + Cycloph",
+        "bbox": [
+          334,
+          585,
+          941,
+          618
+        ],
+        "confidence": 0.8347595992018579,
+        "start_char": 77,
+        "end_char": 133
+      },
+      {
+        "text": "Radiation Therapy: Pending surgical margins",
+        "bbox": [
+          334,
+          631,
+          798,
+          667
+        ],
+        "confidence": 0.9618957713061757,
+        "start_char": 134,
+        "end_char": 177
+      },
+      {
+        "text": "Physician Signature",
+        "bbox": [
+          319,
+          701,
+          565,
+          734
+        ],
+        "confidence": 0.7638695624134549,
+        "start_char": 178,
+        "end_char": 197
+      },
+      {
+        "text": "Signed Electronically by: Dr: Marissa Greene, MD",
+        "bbox": [
+          319,
+          753,
+          827,
+          782
+        ],
+        "confidence": 0.7940255576358285,
+        "start_char": 198,
+        "end_char": 246
+      },
+      {
+        "text": "NPI:",
+        "bbox": [
+          319,
+          802,
+          369,
+          826
+        ],
+        "confidence": 0.998918354511261,
+        "start_char": 247,
+        "end_char": 251
+      },
+      {
+        "text": "1789932041",
+        "bbox": [
+          373,
+          799,
+          500,
+          825
+        ],
+        "confidence": 0.9309171448740818,
+        "start_char": 252,
+        "end_char": 262
+      },
+      {
+        "text": "Date: July 21, 2025",
+        "bbox": [
+          319,
+          848,
+          523,
+          878
+        ],
+        "confidence": 0.6579993525510653,
+        "start_char": 263,
+        "end_char": 282
+      }
+    ],
+    "text": "BROAIBRCAZ: Negalive Treatment Plan Surgery Scheduled: Lumpectomy (8/5/2025) Chemotherapy (Post-op): 4 cycles of Adriamycin + Cycloph Radiation Therapy: Pending surgical margins Physician Signature Signed Electronically by: Dr: Marissa Greene, MD NPI: 1789932041 Date: July 21, 2025"
+  },
+  {
+    "bbox": [
+      415,
+      544,
+      681,
+      1096
+    ],
+    "word_boxes": [
+      {
+        "text": "Dr.",
+        "bbox": [
+          417,
+          552,
+          445,
+          576
+        ],
+        "confidence": 0.9936499748985422,
+        "start_char": 0,
+        "end_char": 3
+      },
+      {
+        "text": "Elaine Roberts, MD",
+        "bbox": [
+          451,
+          549,
+          635,
+          578
+        ],
+        "confidence": 0.8757700404642278,
+        "start_char": 4,
+        "end_char": 22
+      },
+      {
+        "text": "Attending Physician; Brookh",
+        "bbox": [
+          416,
+          572,
+          681,
+          604
+        ],
+        "confidence": 0.7443797962616164,
+        "start_char": 23,
+        "end_char": 50
+      },
+      {
+        "text": "Date: 09/09/2025",
+        "bbox": [
+          417,
+          602,
+          581,
+          626
+        ],
+        "confidence": 0.4741700009370916,
+        "start_char": 51,
+        "end_char": 67
+      }
+    ],
+    "text": "Dr. Elaine Roberts, MD Attending Physician; Brookh Date: 09/09/2025"
+  },
+  {
+    "bbox": [
+      317,
+      432,
+      941,
+      1185
+    ],
+    "word_boxes": [
+      {
+        "text": "BROAIBRCAZ: Negalive",
+        "bbox": [
+          334,
+          432,
+          601,
+          450
+        ],
+        "confidence": 0.4408945096449736,
+        "start_char": 0,
+        "end_char": 20
+      },
+      {
+        "text": "Treatment Plan",
+        "bbox": [
+          318,
+          487,
+          501,
+          517
+        ],
+        "confidence": 0.7508846866674412,
+        "start_char": 21,
+        "end_char": 35
+      },
+      {
+        "text": "Surgery Scheduled: Lumpectomy (8/5/2025)",
+        "bbox": [
+          331,
+          539,
+          789,
+          572
+        ],
+        "confidence": 0.625630858257626,
+        "start_char": 36,
+        "end_char": 76
+      },
+      {
+        "text": "Chemotherapy (Post-op): 4 cycles of Adriamycin + Cycloph",
+        "bbox": [
+          334,
+          585,
+          941,
+          618
+        ],
+        "confidence": 0.8347595992018579,
+        "start_char": 77,
+        "end_char": 133
+      },
+      {
+        "text": "Radiation Therapy: Pending surgical margins",
+        "bbox": [
+          334,
+          631,
+          798,
+          667
+        ],
+        "confidence": 0.9618957713061757,
+        "start_char": 134,
+        "end_char": 177
+      },
+      {
+        "text": "Physician Signature",
+        "bbox": [
+          319,
+          701,
+          565,
+          734
+        ],
+        "confidence": 0.7638695624134549,
+        "start_char": 178,
+        "end_char": 197
+      },
+      {
+        "text": "Signed Electronically by: Dr: Marissa Greene, MD",
+        "bbox": [
+          319,
+          753,
+          827,
+          782
+        ],
+        "confidence": 0.7940255576358285,
+        "start_char": 198,
+        "end_char": 246
+      },
+      {
+        "text": "NPI:",
+        "bbox": [
+          319,
+          802,
+          369,
+          826
+        ],
+        "confidence": 0.998918354511261,
+        "start_char": 247,
+        "end_char": 251
+      },
+      {
+        "text": "1789932041",
+        "bbox": [
+          373,
+          799,
+          500,
+          825
+        ],
+        "confidence": 0.9309171448740818,
+        "start_char": 252,
+        "end_char": 262
+      },
+      {
+        "text": "Date: July 21, 2025",
+        "bbox": [
+          319,
+          848,
+          523,
+          878
+        ],
+        "confidence": 0.6579993525510653,
+        "start_char": 263,
+        "end_char": 282
+      }
+    ],
+    "text": "BROAIBRCAZ: Negalive Treatment Plan Surgery Scheduled: Lumpectomy (8/5/2025) Chemotherapy (Post-op): 4 cycles of Adriamycin + Cycloph Radiation Therapy: Pending surgical margins Physician Signature Signed Electronically by: Dr: Marissa Greene, MD NPI: 1789932041 Date: July 21, 2025"
+  },
+  {
+    "bbox": [
+      317,
+      432,
+      941,
+      1185
+    ],
+    "word_boxes": [
+      {
+        "text": "BROAIBRCAZ: Negalive",
+        "bbox": [
+          334,
+          432,
+          601,
+          450
+        ],
+        "confidence": 0.4408945096449736,
+        "start_char": 0,
+        "end_char": 20
+      },
+      {
+        "text": "Treatment Plan",
+        "bbox": [
+          318,
+          487,
+          501,
+          517
+        ],
+        "confidence": 0.7508846866674412,
+        "start_char": 21,
+        "end_char": 35
+      },
+      {
+        "text": "Surgery Scheduled: Lumpectomy (8/5/2025)",
+        "bbox": [
+          331,
+          539,
+          789,
+          572
+        ],
+        "confidence": 0.625630858257626,
+        "start_char": 36,
+        "end_char": 76
+      },
+      {
+        "text": "Chemotherapy (Post-op): 4 cycles of Adriamycin + Cycloph",
+        "bbox": [
+          334,
+          585,
+          941,
+          618
+        ],
+        "confidence": 0.8347595992018579,
+        "start_char": 77,
+        "end_char": 133
+      },
+      {
+        "text": "Radiation Therapy: Pending surgical margins",
+        "bbox": [
+          334,
+          631,
+          798,
+          667
+        ],
+        "confidence": 0.9618957713061757,
+        "start_char": 134,
+        "end_char": 177
+      },
+      {
+        "text": "Physician Signature",
+        "bbox": [
+          319,
+          701,
+          565,
+          734
+        ],
+        "confidence": 0.7638695624134549,
+        "start_char": 178,
+        "end_char": 197
+      },
+      {
+        "text": "Signed Electronically by: Dr: Marissa Greene, MD",
+        "bbox": [
+          319,
+          753,
+          827,
+          782
+        ],
+        "confidence": 0.7940255576358285,
+        "start_char": 198,
+        "end_char": 246
+      },
+      {
+        "text": "NPI:",
+        "bbox": [
+          319,
+          802,
+          369,
+          826
+        ],
+        "confidence": 0.998918354511261,
+        "start_char": 247,
+        "end_char": 251
+      },
+      {
+        "text": "1789932041",
+        "bbox": [
+          373,
+          799,
+          500,
+          825
+        ],
+        "confidence": 0.9309171448740818,
+        "start_char": 252,
+        "end_char": 262
+      },
+      {
+        "text": "Date: July 21, 2025",
+        "bbox": [
+          319,
+          848,
+          523,
+          878
+        ],
+        "confidence": 0.6579993525510653,
+        "start_char": 263,
+        "end_char": 282
+      }
+    ],
+    "text": "BROAIBRCAZ: Negalive Treatment Plan Surgery Scheduled: Lumpectomy (8/5/2025) Chemotherapy (Post-op): 4 cycles of Adriamycin + Cycloph Radiation Therapy: Pending surgical margins Physician Signature Signed Electronically by: Dr: Marissa Greene, MD NPI: 1789932041 Date: July 21, 2025"
+  },
+  {
+    "bbox": [
+      317,
+      432,
+      941,
+      1185
+    ],
+    "word_boxes": [
+      {
+        "text": "BROAIBRCAZ: Negalive",
+        "bbox": [
+          334,
+          432,
+          601,
+          450
+        ],
+        "confidence": 0.4408945096449736,
+        "start_char": 0,
+        "end_char": 20
+      },
+      {
+        "text": "Treatment Plan",
+        "bbox": [
+          318,
+          487,
+          501,
+          517
+        ],
+        "confidence": 0.7508846866674412,
+        "start_char": 21,
+        "end_char": 35
+      },
+      {
+        "text": "Surgery Scheduled: Lumpectomy (8/5/2025)",
+        "bbox": [
+          331,
+          539,
+          789,
+          572
+        ],
+        "confidence": 0.625630858257626,
+        "start_char": 36,
+        "end_char": 76
+      },
+      {
+        "text": "Chemotherapy (Post-op): 4 cycles of Adriamycin + Cycloph",
+        "bbox": [
+          334,
+          585,
+          941,
+          618
+        ],
+        "confidence": 0.8347595992018579,
+        "start_char": 77,
+        "end_char": 133
+      },
+      {
+        "text": "Radiation Therapy: Pending surgical margins",
+        "bbox": [
+          334,
+          631,
+          798,
+          667
+        ],
+        "confidence": 0.9618957713061757,
+        "start_char": 134,
+        "end_char": 177
+      },
+      {
+        "text": "Physician Signature",
+        "bbox": [
+          319,
+          701,
+          565,
+          734
+        ],
+        "confidence": 0.7638695624134549,
+        "start_char": 178,
+        "end_char": 197
+      },
+      {
+        "text": "Signed Electronically by: Dr: Marissa Greene, MD",
+        "bbox": [
+          319,
+          753,
+          827,
+          782
+        ],
+        "confidence": 0.7940255576358285,
+        "start_char": 198,
+        "end_char": 246
+      },
+      {
+        "text": "NPI:",
+        "bbox": [
+          319,
+          802,
+          369,
+          826
+        ],
+        "confidence": 0.998918354511261,
+        "start_char": 247,
+        "end_char": 251
+      },
+      {
+        "text": "1789932041",
+        "bbox": [
+          373,
+          799,
+          500,
+          825
+        ],
+        "confidence": 0.9309171448740818,
+        "start_char": 252,
+        "end_char": 262
+      },
+      {
+        "text": "Date: July 21, 2025",
+        "bbox": [
+          319,
+          848,
+          523,
+          878
+        ],
+        "confidence": 0.6579993525510653,
+        "start_char": 263,
+        "end_char": 282
+      }
+    ],
+    "text": "BROAIBRCAZ: Negalive Treatment Plan Surgery Scheduled: Lumpectomy (8/5/2025) Chemotherapy (Post-op): 4 cycles of Adriamycin + Cycloph Radiation Therapy: Pending surgical margins Physician Signature Signed Electronically by: Dr: Marissa Greene, MD NPI: 1789932041 Date: July 21, 2025"
   }
 ]

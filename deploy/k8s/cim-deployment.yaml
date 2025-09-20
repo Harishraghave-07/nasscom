@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cim-pipeline
+  namespace: nasscom
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cim-pipeline
+  template:
+    metadata:
+      labels:
+        app: cim-pipeline
+    spec:
+      containers:
+        - name: cim-pipeline
+          image: nasscom/cim_pipeline:latest
+          ports:
+            - containerPort: 5000
+          envFrom:
+            - secretRef:
+                name: nasscom-secrets
+          env:
+            - name: PHI_SERVICE_URL
+              value: "http://phi-service:8080"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "512Mi"
+            limits:
+              cpu: "1"
+              memory: "2Gi"
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+      securityContext:
+        runAsNonRoot: true

@@ -79,10 +79,22 @@ class ClinicalImageMaskingPipeline:
 
         # performance monitoring
         self.metrics: Dict[str, Any] = {"processed": 0, "errors": 0, "stages": {}}
+        # PHI service circuit breaker state
+        self._phi_service_failures = 0
+        self._phi_service_backoff_until = 0.0
 
         # temporary management
         self._temp_root = Path(self.config.processing.temp_dir)
-        self._temp_root.mkdir(parents=True, exist_ok=True)
+        # If in-memory temp mode is requested, avoid creating a persistent
+        # temp root on disk. Some modules may still ask for a temp path via
+        # AppConfig.get_temp_file_path; that method will fall back to system
+        # temp locations while `use_in_memory_temp` is True.
+        try:
+            if not getattr(self.config.processing, "use_in_memory_temp", False):
+                self._temp_root.mkdir(parents=True, exist_ok=True)
+        except Exception:
+            # best-effort: don't fail startup for temp dir creation issues
+            logger.debug("Could not create temp root %s; proceeding", self._temp_root)
 
     def _init_components(self) -> None:
         # Import components with explicit error handling. Optional deps may be
@@ -188,22 +200,35 @@ class ClinicalImageMaskingPipeline:
             if not isinstance(page_text, str) or not isinstance(anonymized_text, str):
                 return detections
 
-            # build page-level word_boxes with absolute char offsets
+            # Build a canonical page_text from regions in the same way as the
+            # pipeline constructs it earlier: prefer `raw_line` join with
+            # newlines when present, otherwise join region texts with spaces.
+            try:
+                use_raw = any(r.get("raw_line") for r in regions)
+                if use_raw:
+                    canonical_page = "\n".join([r.get("raw_line") if r.get("raw_line") is not None else (r.get("text") or "") for r in regions or []])
+                    sep = "\n"
+                else:
+                    canonical_page = " ".join([(r.get("text") or "").strip() for r in regions or []])
+                    sep = " "
+            except Exception:
+                canonical_page = page_text or ""
+                sep = " "
+
+            # Recreate page_word_boxes with absolute offsets using the same
+            # joining logic so offsets align with `canonical_page`.
             page_word_boxes: List[Dict[str, Any]] = []
             cursor = 0
             for r in regions:
-                rtext = (r.get("text") or "")
-                # skip empty regions but still reserve a separating space if needed
+                rtext = (r.get("raw_line") if r.get("raw_line") is not None else (r.get("text") or ""))
                 if cursor != 0 and rtext:
-                    cursor += 1  # account for the joining space used when building page_text
-                # attach region start
+                    cursor += len(sep)
                 region_start = cursor
                 word_boxes = r.get("word_boxes") or []
                 for w in word_boxes:
                     try:
                         ws = int(w.get("start_char", 0))
                         we = int(w.get("end_char", 0))
-                        # word_boxes start_char are region-relative in extraction; compute absolute
                         abs_start = region_start + ws
                         abs_end = region_start + we
                         pb = dict(w)
@@ -214,20 +239,39 @@ class ClinicalImageMaskingPipeline:
                         continue
                 cursor = region_start + len(rtext)
 
-            # compute index mapping between original page text and anonymized text
-            index_map = self._compute_orig_to_new_index_map(page_text or "", anonymized_text or "")
+            # Build a token-level alignment between source (canonical_page)
+            # and the anonymized_text so we can robustly map original
+            # detection character spans to positions in the anonymized text.
+            source_page = canonical_page or page_text or ""
+            try:
+                from src.ocr.mapping import TokenAlignment
 
-            def map_span(s: int, e: int) -> Tuple[int, int]:
-                # clamp inputs
-                s = max(0, min(len(page_text), int(s or 0)))
-                e = max(0, min(len(page_text), int(e or 0)))
-                new_s = int(index_map[s])
-                # map exclusive end by mapping e-1 then +1
-                if e > 0:
-                    new_e = int(index_map[max(0, e - 1)]) + 1
-                else:
-                    new_e = int(index_map[0])
-                return new_s, new_e
+                aligner = TokenAlignment(source_page, anonymized_text or "")
+
+                def map_span(s: int, e: int) -> Tuple[int, int]:
+                    try:
+                        return aligner.map_span(s, e)
+                    except Exception:
+                        # fallback to naive clamp
+                        s2 = max(0, min(len(source_page), int(s or 0)))
+                        e2 = max(0, min(len(source_page), int(e or 0)))
+                        return s2, e2
+            except Exception:
+                # If TokenAlignment not available, fallback to previous behavior
+                source_page = canonical_page or page_text or ""
+                index_map = self._compute_orig_to_new_index_map(source_page, anonymized_text or "")
+
+                def map_span(s: int, e: int) -> Tuple[int, int]:
+                    # clamp inputs
+                    s = max(0, min(len(page_text), int(s or 0)))
+                    e = max(0, min(len(page_text), int(e or 0)))
+                    new_s = int(index_map[s])
+                    # map exclusive end by mapping e-1 then +1
+                    if e > 0:
+                        new_e = int(index_map[max(0, e - 1)]) + 1
+                    else:
+                        new_e = int(index_map[0])
+                    return new_s, new_e
 
             # For remapping, recalculate absolute page_word_boxes using canonical region text
             try:
@@ -246,6 +290,9 @@ class ClinicalImageMaskingPipeline:
 
                 # prefer numeric spans; map via index_map
                 if orig_start is not None and orig_end is not None:
+                    # If detections were produced against a page_text built
+                    # from regions, their start/end are relative to that
+                    # page_text. If so, mapping using `source_page` is correct.
                     new_s, new_e = map_span(orig_start, orig_end)
                     d["anonymized_start"] = new_s
                     d["anonymized_end"] = new_e
@@ -324,7 +371,24 @@ class ClinicalImageMaskingPipeline:
         Replace or extend this method to call Presidio Analyzer/Recognizer as needed.
         """
         meta = meta or {}
+        # If configured to use an external PHI service, call it first
         try:
+            if bool(getattr(self.config, "use_external_phi_service", False)) or bool(getattr(self.app_config, "use_external_phi_service", False)):
+                try:
+                    import os
+                    import httpx
+
+                    phi_url = os.environ.get("PHI_SERVICE_URL") or getattr(self.app_config, "phi_service_url", None)
+                    if phi_url:
+                        with httpx.Client(timeout=10.0) as client:
+                            resp = client.post(f"{phi_url.rstrip('/')}/analyze", json={"text": text, "meta": meta})
+                            if resp.status_code == 200:
+                                return resp.json() or []
+                            else:
+                                logger.warning("External PHI service returned status %s; falling back", resp.status_code)
+                except Exception:
+                    logger.exception("External PHI service call failed; falling back to local analyzer")
+
             # prefer a central presidio wrapper if available
             try:
                 from src.integration.presidio_wrapper import get_analyzer
@@ -371,7 +435,13 @@ class ClinicalImageMaskingPipeline:
             image_id,
         )
 
-        session_temp = Path(tempfile.mkdtemp(prefix=f"cim_{image_id}_", dir=str(self._temp_root)))
+        session_temp = None
+        # Create a session temp dir on-disk only when configured to do so.
+        if not getattr(self.config.processing, "use_in_memory_temp", False):
+            try:
+                session_temp = Path(tempfile.mkdtemp(prefix=f"cim_{image_id}_", dir=str(self._temp_root)))
+            except Exception:
+                session_temp = None
         stage_results: Dict[str, StageResult] = {}
         overall_start = time.perf_counter()
 
@@ -455,6 +525,14 @@ class ClinicalImageMaskingPipeline:
             # replacement. For now we attempt to run anonymizer and retain the
             # original detection spans.
             try:
+                # Respect feature flag: only run anonymizer when dummy
+                # data replacement is explicitly enabled in AppConfig.
+                from src.core.config import SETTINGS
+
+                if not getattr(SETTINGS, "enable_dummy_data_replacement", False):
+                    logger.debug("Dummy data replacement disabled; skipping anonymizer step")
+                    raise RuntimeError("anonymizer_skipped_by_feature_flag")
+
                 page_text = None
                 if isinstance(meta, dict):
                     page_text = meta.get("page_text")
@@ -572,7 +650,8 @@ class ClinicalImageMaskingPipeline:
         finally:
             # cleanup
             try:
-                shutil.rmtree(session_temp)
+                if session_temp is not None:
+                    shutil.rmtree(session_temp)
             except Exception:
                 logger.debug("Failed to remove temp %s", session_temp)
 
@@ -718,6 +797,7 @@ class ClinicalImageMaskingPipeline:
         presidio_report = {"detections": []}
 
         for r in text_regions:
+            skip_presidio_call = False
             t = r.get("text", "")
 
             def _normalize_text(s: str) -> str:
@@ -779,6 +859,56 @@ class ClinicalImageMaskingPipeline:
                 self.logger.exception("Legacy PHI classifier failed for region=%s", r.get("bbox"))
                 legacy_detections = []
 
+            # Attempt to call external PHI detection service if configured
+            presidio_detections = []
+            phi_service_url = getattr(self.config, "phi_service_url", None) or os.environ.get("PHI_SERVICE_URL")
+            now = time.time()
+            service_healthy = now >= getattr(self, "_phi_service_backoff_until", 0)
+            if phi_service_url and service_healthy:
+                try:
+                    import httpx
+
+                    client_timeout = getattr(self.config, "phi_service_timeout", 5)
+                    payload = {"text": t, "context": {"surrounding_text": context.get("surrounding_text", "")}}
+                    headers = {"Content-Type": "application/json"}
+                    # prefer config-provided token header
+                    token = getattr(self.config, "phi_service_token", None) or os.environ.get("PHI_SERVICE_TOKEN")
+                    if token:
+                        headers["Authorization"] = f"Bearer {token}"
+                    with httpx.Client(timeout=client_timeout) as client:
+                        resp = client.post(f"{phi_service_url.rstrip('/')}/api/v1/detect", json=payload, headers=headers)
+                        if resp.status_code == 200:
+                            j = resp.json()
+                            # expect j['detections'] list
+                            for d in j.get("detections", []):
+                                # normalize keys to match pipeline expectations
+                                presidio_detections.append({
+                                    "text": d.get("text"),
+                                    "start": d.get("start"),
+                                    "end": d.get("end"),
+                                    "entity_type": d.get("phi_type") or d.get("entity_type"),
+                                    "confidence": d.get("confidence", 0.0),
+                                })
+                            # reset failure counter on success
+                            self._phi_service_failures = 0
+                            if presidio_detections:
+                                skip_presidio_call = True
+                        else:
+                            raise RuntimeError(f"PHI service returned {resp.status_code}")
+                except Exception:
+                    # increment failure counter and set backoff if threshold exceeded
+                    self._phi_service_failures = getattr(self, "_phi_service_failures", 0) + 1
+                    max_failures = int(getattr(self.config, "phi_service_max_failures", 3))
+                    backoff_seconds = int(getattr(self.config, "phi_service_backoff_seconds", 30))
+                    if self._phi_service_failures >= max_failures:
+                        self._phi_service_backoff_until = time.time() + backoff_seconds
+                        self.logger.warning("PHI service unavailable; entering backoff for %s seconds", backoff_seconds)
+                    self.logger.exception("PHI service call failed for region=%s; falling back to local classifier", r.get("bbox"))
+                    presidio_detections = []
+            else:
+                # Service not configured or in backoff
+                presidio_detections = []
+
             # Before attempting to map detections to word-level boxes, try to
             # merge adjacent OCR word boxes that likely compose multi-word PHI
             # phrases. We use detected PHI texts as candidate phrases to match
@@ -835,8 +965,7 @@ class ClinicalImageMaskingPipeline:
             legacy_report["detections"].extend(legacy_detections)
 
             # If canary enabled, run Presidio too (either shadow or active)
-            presidio_detections = []
-            if use_presidio:
+            if use_presidio and not skip_presidio_call:
                 try:
                     from src.integration.presidio_wrapper import get_analyzer
 

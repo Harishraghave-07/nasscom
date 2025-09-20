@@ -1072,5 +1072,1101 @@
       }
     ],
     "text": "Alacmmem: ralnoiogy Repon oummmaly Patient: Emily R_ Dawson DOB: 03/12/1975 Specimen: Left Breast Tissue Biopsy Date of Collection: 05/19/2025 Date of Report: 05/21/2025 Diagnosis Invasive ductal carcinoma, grade II. Tumor cells are ER-positive, PR-positive, HERZ-negative. Margins: Not applicable (core biopsy): Recommendation: Surgical excision and staging: Pathologist: Dr: Daniel Holt; MD Facility: University of Colorado Pathology Lab"
+  },
+  {
+    "bbox": [
+      60,
+      174,
+      683,
+      927
+    ],
+    "word_boxes": [
+      {
+        "text": "Alacmmem: ralnoiogy Repon oummmaly",
+        "bbox": [
+          63,
+          174,
+          547,
+          192
+        ],
+        "confidence": 0.143008888991347,
+        "start_char": 0,
+        "end_char": 34
+      },
+      {
+        "text": "Patient: Emily R_",
+        "bbox": [
+          62,
+          213,
+          232,
+          242
+        ],
+        "confidence": 0.4924136367021756,
+        "start_char": 35,
+        "end_char": 52
+      },
+      {
+        "text": "Dawson",
+        "bbox": [
+          238,
+          216,
+          326,
+          240
+        ],
+        "confidence": 0.9999720163935193,
+        "start_char": 53,
+        "end_char": 59
+      },
+      {
+        "text": "DOB: 03/12/1975",
+        "bbox": [
+          62,
+          262,
+          244,
+          288
+        ],
+        "confidence": 0.9419035848149128,
+        "start_char": 60,
+        "end_char": 75
+      },
+      {
+        "text": "Specimen: Left Breast Tissue Biopsy",
+        "bbox": [
+          62,
+          308,
+          441,
+          340
+        ],
+        "confidence": 0.9546671394576823,
+        "start_char": 76,
+        "end_char": 111
+      },
+      {
+        "text": "Date of Collection: 05/19/2025",
+        "bbox": [
+          62,
+          356,
+          376,
+          382
+        ],
+        "confidence": 0.5475196012782398,
+        "start_char": 112,
+        "end_char": 142
+      },
+      {
+        "text": "Date of Report: 05/21/2025",
+        "bbox": [
+          62,
+          403,
+          346,
+          433
+        ],
+        "confidence": 0.8639628663005048,
+        "start_char": 143,
+        "end_char": 169
+      },
+      {
+        "text": "Diagnosis",
+        "bbox": [
+          61,
+          497,
+          168,
+          529
+        ],
+        "confidence": 0.9999822377369822,
+        "start_char": 170,
+        "end_char": 179
+      },
+      {
+        "text": "Invasive ductal carcinoma, grade II.",
+        "bbox": [
+          60,
+          543,
+          424,
+          576
+        ],
+        "confidence": 0.8369266960073375,
+        "start_char": 180,
+        "end_char": 216
+      },
+      {
+        "text": "Tumor cells are ER-positive, PR-positive, HERZ-negative.",
+        "bbox": [
+          62,
+          590,
+          648,
+          623
+        ],
+        "confidence": 0.7063798219704801,
+        "start_char": 217,
+        "end_char": 273
+      },
+      {
+        "text": "Margins: Not applicable (core biopsy):",
+        "bbox": [
+          62,
+          688,
+          450,
+          718
+        ],
+        "confidence": 0.758687310996724,
+        "start_char": 274,
+        "end_char": 312
+      },
+      {
+        "text": "Recommendation: Surgical excision and staging:",
+        "bbox": [
+          62,
+          733,
+          558,
+          765
+        ],
+        "confidence": 0.800813119458163,
+        "start_char": 313,
+        "end_char": 359
+      },
+      {
+        "text": "Pathologist: Dr: Daniel Holt; MD",
+        "bbox": [
+          62,
+          830,
+          390,
+          860
+        ],
+        "confidence": 0.5716877749646313,
+        "start_char": 360,
+        "end_char": 392
+      },
+      {
+        "text": "Facility: University of Colorado Pathology Lab",
+        "bbox": [
+          60,
+          872,
+          531,
+          908
+        ],
+        "confidence": 0.8566968792008851,
+        "start_char": 393,
+        "end_char": 439
+      }
+    ],
+    "text": "Alacmmem: ralnoiogy Repon oummmaly Patient: Emily R_ Dawson DOB: 03/12/1975 Specimen: Left Breast Tissue Biopsy Date of Collection: 05/19/2025 Date of Report: 05/21/2025 Diagnosis Invasive ductal carcinoma, grade II. Tumor cells are ER-positive, PR-positive, HERZ-negative. Margins: Not applicable (core biopsy): Recommendation: Surgical excision and staging: Pathologist: Dr: Daniel Holt; MD Facility: University of Colorado Pathology Lab"
+  },
+  {
+    "bbox": [
+      60,
+      174,
+      683,
+      927
+    ],
+    "word_boxes": [
+      {
+        "text": "Alacmmem: ralnoiogy Repon oummmaly",
+        "bbox": [
+          63,
+          174,
+          547,
+          192
+        ],
+        "confidence": 0.143008888991347,
+        "start_char": 0,
+        "end_char": 34
+      },
+      {
+        "text": "Patient: Emily R_",
+        "bbox": [
+          62,
+          213,
+          232,
+          242
+        ],
+        "confidence": 0.4924136367021756,
+        "start_char": 35,
+        "end_char": 52
+      },
+      {
+        "text": "Dawson",
+        "bbox": [
+          238,
+          216,
+          326,
+          240
+        ],
+        "confidence": 0.9999720163935193,
+        "start_char": 53,
+        "end_char": 59
+      },
+      {
+        "text": "DOB: 03/12/1975",
+        "bbox": [
+          62,
+          262,
+          244,
+          288
+        ],
+        "confidence": 0.9419035848149128,
+        "start_char": 60,
+        "end_char": 75
+      },
+      {
+        "text": "Specimen: Left Breast Tissue Biopsy",
+        "bbox": [
+          62,
+          308,
+          441,
+          340
+        ],
+        "confidence": 0.9546671394576823,
+        "start_char": 76,
+        "end_char": 111
+      },
+      {
+        "text": "Date of Collection: 05/19/2025",
+        "bbox": [
+          62,
+          356,
+          376,
+          382
+        ],
+        "confidence": 0.5475196012782398,
+        "start_char": 112,
+        "end_char": 142
+      },
+      {
+        "text": "Date of Report: 05/21/2025",
+        "bbox": [
+          62,
+          403,
+          346,
+          433
+        ],
+        "confidence": 0.8639628663005048,
+        "start_char": 143,
+        "end_char": 169
+      },
+      {
+        "text": "Diagnosis",
+        "bbox": [
+          61,
+          497,
+          168,
+          529
+        ],
+        "confidence": 0.9999822377369822,
+        "start_char": 170,
+        "end_char": 179
+      },
+      {
+        "text": "Invasive ductal carcinoma, grade II.",
+        "bbox": [
+          60,
+          543,
+          424,
+          576
+        ],
+        "confidence": 0.8369266960073375,
+        "start_char": 180,
+        "end_char": 216
+      },
+      {
+        "text": "Tumor cells are ER-positive, PR-positive, HERZ-negative.",
+        "bbox": [
+          62,
+          590,
+          648,
+          623
+        ],
+        "confidence": 0.7063798219704801,
+        "start_char": 217,
+        "end_char": 273
+      },
+      {
+        "text": "Margins: Not applicable (core biopsy):",
+        "bbox": [
+          62,
+          688,
+          450,
+          718
+        ],
+        "confidence": 0.758687310996724,
+        "start_char": 274,
+        "end_char": 312
+      },
+      {
+        "text": "Recommendation: Surgical excision and staging:",
+        "bbox": [
+          62,
+          733,
+          558,
+          765
+        ],
+        "confidence": 0.800813119458163,
+        "start_char": 313,
+        "end_char": 359
+      },
+      {
+        "text": "Pathologist: Dr: Daniel Holt; MD",
+        "bbox": [
+          62,
+          830,
+          390,
+          860
+        ],
+        "confidence": 0.5716877749646313,
+        "start_char": 360,
+        "end_char": 392
+      },
+      {
+        "text": "Facility: University of Colorado Pathology Lab",
+        "bbox": [
+          60,
+          872,
+          531,
+          908
+        ],
+        "confidence": 0.8566968792008851,
+        "start_char": 393,
+        "end_char": 439
+      }
+    ],
+    "text": "Alacmmem: ralnoiogy Repon oummmaly Patient: Emily R_ Dawson DOB: 03/12/1975 Specimen: Left Breast Tissue Biopsy Date of Collection: 05/19/2025 Date of Report: 05/21/2025 Diagnosis Invasive ductal carcinoma, grade II. Tumor cells are ER-positive, PR-positive, HERZ-negative. Margins: Not applicable (core biopsy): Recommendation: Surgical excision and staging: Pathologist: Dr: Daniel Holt; MD Facility: University of Colorado Pathology Lab"
+  },
+  {
+    "bbox": [
+      60,
+      174,
+      683,
+      927
+    ],
+    "word_boxes": [
+      {
+        "text": "Alacmmem: ralnoiogy Repon oummmaly",
+        "bbox": [
+          63,
+          174,
+          547,
+          192
+        ],
+        "confidence": 0.143008888991347,
+        "start_char": 0,
+        "end_char": 34
+      },
+      {
+        "text": "Patient: Emily R_",
+        "bbox": [
+          62,
+          213,
+          232,
+          242
+        ],
+        "confidence": 0.4924136367021756,
+        "start_char": 35,
+        "end_char": 52
+      },
+      {
+        "text": "Dawson",
+        "bbox": [
+          238,
+          216,
+          326,
+          240
+        ],
+        "confidence": 0.9999720163935193,
+        "start_char": 53,
+        "end_char": 59
+      },
+      {
+        "text": "DOB: 03/12/1975",
+        "bbox": [
+          62,
+          262,
+          244,
+          288
+        ],
+        "confidence": 0.9419035848149128,
+        "start_char": 60,
+        "end_char": 75
+      },
+      {
+        "text": "Specimen: Left Breast Tissue Biopsy",
+        "bbox": [
+          62,
+          308,
+          441,
+          340
+        ],
+        "confidence": 0.9546671394576823,
+        "start_char": 76,
+        "end_char": 111
+      },
+      {
+        "text": "Date of Collection: 05/19/2025",
+        "bbox": [
+          62,
+          356,
+          376,
+          382
+        ],
+        "confidence": 0.5475196012782398,
+        "start_char": 112,
+        "end_char": 142
+      },
+      {
+        "text": "Date of Report: 05/21/2025",
+        "bbox": [
+          62,
+          403,
+          346,
+          433
+        ],
+        "confidence": 0.8639628663005048,
+        "start_char": 143,
+        "end_char": 169
+      },
+      {
+        "text": "Diagnosis",
+        "bbox": [
+          61,
+          497,
+          168,
+          529
+        ],
+        "confidence": 0.9999822377369822,
+        "start_char": 170,
+        "end_char": 179
+      },
+      {
+        "text": "Invasive ductal carcinoma, grade II.",
+        "bbox": [
+          60,
+          543,
+          424,
+          576
+        ],
+        "confidence": 0.8369266960073375,
+        "start_char": 180,
+        "end_char": 216
+      },
+      {
+        "text": "Tumor cells are ER-positive, PR-positive, HERZ-negative.",
+        "bbox": [
+          62,
+          590,
+          648,
+          623
+        ],
+        "confidence": 0.7063798219704801,
+        "start_char": 217,
+        "end_char": 273
+      },
+      {
+        "text": "Margins: Not applicable (core biopsy):",
+        "bbox": [
+          62,
+          688,
+          450,
+          718
+        ],
+        "confidence": 0.758687310996724,
+        "start_char": 274,
+        "end_char": 312
+      },
+      {
+        "text": "Recommendation: Surgical excision and staging:",
+        "bbox": [
+          62,
+          733,
+          558,
+          765
+        ],
+        "confidence": 0.800813119458163,
+        "start_char": 313,
+        "end_char": 359
+      },
+      {
+        "text": "Pathologist: Dr: Daniel Holt; MD",
+        "bbox": [
+          62,
+          830,
+          390,
+          860
+        ],
+        "confidence": 0.5716877749646313,
+        "start_char": 360,
+        "end_char": 392
+      },
+      {
+        "text": "Facility: University of Colorado Pathology Lab",
+        "bbox": [
+          60,
+          872,
+          531,
+          908
+        ],
+        "confidence": 0.8566968792008851,
+        "start_char": 393,
+        "end_char": 439
+      }
+    ],
+    "text": "Alacmmem: ralnoiogy Repon oummmaly Patient: Emily R_ Dawson DOB: 03/12/1975 Specimen: Left Breast Tissue Biopsy Date of Collection: 05/19/2025 Date of Report: 05/21/2025 Diagnosis Invasive ductal carcinoma, grade II. Tumor cells are ER-positive, PR-positive, HERZ-negative. Margins: Not applicable (core biopsy): Recommendation: Surgical excision and staging: Pathologist: Dr: Daniel Holt; MD Facility: University of Colorado Pathology Lab"
+  },
+  {
+    "bbox": [
+      60,
+      174,
+      683,
+      927
+    ],
+    "word_boxes": [
+      {
+        "text": "Alacmmem: ralnoiogy Repon oummmaly",
+        "bbox": [
+          63,
+          174,
+          547,
+          192
+        ],
+        "confidence": 0.143008888991347,
+        "start_char": 0,
+        "end_char": 34
+      },
+      {
+        "text": "Patient: Emily R_",
+        "bbox": [
+          62,
+          213,
+          232,
+          242
+        ],
+        "confidence": 0.4924136367021756,
+        "start_char": 35,
+        "end_char": 52
+      },
+      {
+        "text": "Dawson",
+        "bbox": [
+          238,
+          216,
+          326,
+          240
+        ],
+        "confidence": 0.9999720163935193,
+        "start_char": 53,
+        "end_char": 59
+      },
+      {
+        "text": "DOB: 03/12/1975",
+        "bbox": [
+          62,
+          262,
+          244,
+          288
+        ],
+        "confidence": 0.9419035848149128,
+        "start_char": 60,
+        "end_char": 75
+      },
+      {
+        "text": "Specimen: Left Breast Tissue Biopsy",
+        "bbox": [
+          62,
+          308,
+          441,
+          340
+        ],
+        "confidence": 0.9546671394576823,
+        "start_char": 76,
+        "end_char": 111
+      },
+      {
+        "text": "Date of Collection: 05/19/2025",
+        "bbox": [
+          62,
+          356,
+          376,
+          382
+        ],
+        "confidence": 0.5475196012782398,
+        "start_char": 112,
+        "end_char": 142
+      },
+      {
+        "text": "Date of Report: 05/21/2025",
+        "bbox": [
+          62,
+          403,
+          346,
+          433
+        ],
+        "confidence": 0.8639628663005048,
+        "start_char": 143,
+        "end_char": 169
+      },
+      {
+        "text": "Diagnosis",
+        "bbox": [
+          61,
+          497,
+          168,
+          529
+        ],
+        "confidence": 0.9999822377369822,
+        "start_char": 170,
+        "end_char": 179
+      },
+      {
+        "text": "Invasive ductal carcinoma, grade II.",
+        "bbox": [
+          60,
+          543,
+          424,
+          576
+        ],
+        "confidence": 0.8369266960073375,
+        "start_char": 180,
+        "end_char": 216
+      },
+      {
+        "text": "Tumor cells are ER-positive, PR-positive, HERZ-negative.",
+        "bbox": [
+          62,
+          590,
+          648,
+          623
+        ],
+        "confidence": 0.7063798219704801,
+        "start_char": 217,
+        "end_char": 273
+      },
+      {
+        "text": "Margins: Not applicable (core biopsy):",
+        "bbox": [
+          62,
+          688,
+          450,
+          718
+        ],
+        "confidence": 0.758687310996724,
+        "start_char": 274,
+        "end_char": 312
+      },
+      {
+        "text": "Recommendation: Surgical excision and staging:",
+        "bbox": [
+          62,
+          733,
+          558,
+          765
+        ],
+        "confidence": 0.800813119458163,
+        "start_char": 313,
+        "end_char": 359
+      },
+      {
+        "text": "Pathologist: Dr: Daniel Holt; MD",
+        "bbox": [
+          62,
+          830,
+          390,
+          860
+        ],
+        "confidence": 0.5716877749646313,
+        "start_char": 360,
+        "end_char": 392
+      },
+      {
+        "text": "Facility: University of Colorado Pathology Lab",
+        "bbox": [
+          60,
+          872,
+          531,
+          908
+        ],
+        "confidence": 0.8566968792008851,
+        "start_char": 393,
+        "end_char": 439
+      }
+    ],
+    "text": "Alacmmem: ralnoiogy Repon oummmaly Patient: Emily R_ Dawson DOB: 03/12/1975 Specimen: Left Breast Tissue Biopsy Date of Collection: 05/19/2025 Date of Report: 05/21/2025 Diagnosis Invasive ductal carcinoma, grade II. Tumor cells are ER-positive, PR-positive, HERZ-negative. Margins: Not applicable (core biopsy): Recommendation: Surgical excision and staging: Pathologist: Dr: Daniel Holt; MD Facility: University of Colorado Pathology Lab"
+  },
+  {
+    "bbox": [
+      316,
+      432,
+      941,
+      1185
+    ],
+    "word_boxes": [
+      {
+        "text": "Diagnosis:",
+        "bbox": [
+          317,
+          497,
+          432,
+          529
+        ],
+        "confidence": 0.9455009647462496,
+        "start_char": 0,
+        "end_char": 10
+      },
+      {
+        "text": "Invasive ductal carcinoma, grade II.",
+        "bbox": [
+          317,
+          542,
+          681,
+          578
+        ],
+        "confidence": 0.7674958257743323,
+        "start_char": 11,
+        "end_char": 47
+      },
+      {
+        "text": "Tumor cells are ER-positive, PR-positive, HERZ-negative_",
+        "bbox": [
+          318,
+          590,
+          904,
+          623
+        ],
+        "confidence": 0.7436265067257927,
+        "start_char": 48,
+        "end_char": 104
+      },
+      {
+        "text": "Margins: Not applicable (core biopsy):",
+        "bbox": [
+          319,
+          683,
+          707,
+          722
+        ],
+        "confidence": 0.8188812148253756,
+        "start_char": 105,
+        "end_char": 143
+      },
+      {
+        "text": "Recommendation: Surgical excision and staging:",
+        "bbox": [
+          320,
+          734,
+          816,
+          766
+        ],
+        "confidence": 0.8506252619631526,
+        "start_char": 144,
+        "end_char": 190
+      },
+      {
+        "text": "Pathologist: Dr: Daniel Holt; MD",
+        "bbox": [
+          318,
+          830,
+          646,
+          860
+        ],
+        "confidence": 0.8822101481019581,
+        "start_char": 191,
+        "end_char": 223
+      },
+      {
+        "text": "Facility: University of Colorado Pathology Lab",
+        "bbox": [
+          316,
+          872,
+          787,
+          908
+        ],
+        "confidence": 0.8420602955584958,
+        "start_char": 224,
+        "end_char": 270
+      }
+    ],
+    "text": "Diagnosis: Invasive ductal carcinoma, grade II. Tumor cells are ER-positive, PR-positive, HERZ-negative_ Margins: Not applicable (core biopsy): Recommendation: Surgical excision and staging: Pathologist: Dr: Daniel Holt; MD Facility: University of Colorado Pathology Lab"
+  },
+  {
+    "bbox": [
+      316,
+      432,
+      941,
+      1185
+    ],
+    "word_boxes": [
+      {
+        "text": "Diagnosis:",
+        "bbox": [
+          317,
+          497,
+          432,
+          529
+        ],
+        "confidence": 0.9455009647462496,
+        "start_char": 0,
+        "end_char": 10
+      },
+      {
+        "text": "Invasive ductal carcinoma, grade II.",
+        "bbox": [
+          317,
+          542,
+          681,
+          578
+        ],
+        "confidence": 0.7674958257743323,
+        "start_char": 11,
+        "end_char": 47
+      },
+      {
+        "text": "Tumor cells are ER-positive, PR-positive, HERZ-negative_",
+        "bbox": [
+          318,
+          590,
+          904,
+          623
+        ],
+        "confidence": 0.7436265067257927,
+        "start_char": 48,
+        "end_char": 104
+      },
+      {
+        "text": "Margins: Not applicable (core biopsy):",
+        "bbox": [
+          319,
+          683,
+          707,
+          722
+        ],
+        "confidence": 0.8188812148253756,
+        "start_char": 105,
+        "end_char": 143
+      },
+      {
+        "text": "Recommendation: Surgical excision and staging:",
+        "bbox": [
+          320,
+          734,
+          816,
+          766
+        ],
+        "confidence": 0.8506252619631526,
+        "start_char": 144,
+        "end_char": 190
+      },
+      {
+        "text": "Pathologist: Dr: Daniel Holt; MD",
+        "bbox": [
+          318,
+          830,
+          646,
+          860
+        ],
+        "confidence": 0.8822101481019581,
+        "start_char": 191,
+        "end_char": 223
+      },
+      {
+        "text": "Facility: University of Colorado Pathology Lab",
+        "bbox": [
+          316,
+          872,
+          787,
+          908
+        ],
+        "confidence": 0.8420602955584958,
+        "start_char": 224,
+        "end_char": 270
+      }
+    ],
+    "text": "Diagnosis: Invasive ductal carcinoma, grade II. Tumor cells are ER-positive, PR-positive, HERZ-negative_ Margins: Not applicable (core biopsy): Recommendation: Surgical excision and staging: Pathologist: Dr: Daniel Holt; MD Facility: University of Colorado Pathology Lab"
+  },
+  {
+    "bbox": [
+      316,
+      432,
+      941,
+      1185
+    ],
+    "word_boxes": [
+      {
+        "text": "Diagnosis:",
+        "bbox": [
+          317,
+          497,
+          432,
+          529
+        ],
+        "confidence": 0.9455009647462496,
+        "start_char": 0,
+        "end_char": 10
+      },
+      {
+        "text": "Invasive ductal carcinoma, grade II.",
+        "bbox": [
+          317,
+          542,
+          681,
+          578
+        ],
+        "confidence": 0.7674958257743323,
+        "start_char": 11,
+        "end_char": 47
+      },
+      {
+        "text": "Tumor cells are ER-positive, PR-positive, HERZ-negative_",
+        "bbox": [
+          318,
+          590,
+          904,
+          623
+        ],
+        "confidence": 0.7436265067257927,
+        "start_char": 48,
+        "end_char": 104
+      },
+      {
+        "text": "Margins: Not applicable (core biopsy):",
+        "bbox": [
+          319,
+          683,
+          707,
+          722
+        ],
+        "confidence": 0.8188812148253756,
+        "start_char": 105,
+        "end_char": 143
+      },
+      {
+        "text": "Recommendation: Surgical excision and staging:",
+        "bbox": [
+          320,
+          734,
+          816,
+          766
+        ],
+        "confidence": 0.8506252619631526,
+        "start_char": 144,
+        "end_char": 190
+      },
+      {
+        "text": "Pathologist: Dr: Daniel Holt; MD",
+        "bbox": [
+          318,
+          830,
+          646,
+          860
+        ],
+        "confidence": 0.8822101481019581,
+        "start_char": 191,
+        "end_char": 223
+      },
+      {
+        "text": "Facility: University of Colorado Pathology Lab",
+        "bbox": [
+          316,
+          872,
+          787,
+          908
+        ],
+        "confidence": 0.8420602955584958,
+        "start_char": 224,
+        "end_char": 270
+      }
+    ],
+    "text": "Diagnosis: Invasive ductal carcinoma, grade II. Tumor cells are ER-positive, PR-positive, HERZ-negative_ Margins: Not applicable (core biopsy): Recommendation: Surgical excision and staging: Pathologist: Dr: Daniel Holt; MD Facility: University of Colorado Pathology Lab"
+  },
+  {
+    "bbox": [
+      316,
+      432,
+      941,
+      1185
+    ],
+    "word_boxes": [
+      {
+        "text": "Diagnosis:",
+        "bbox": [
+          317,
+          497,
+          432,
+          529
+        ],
+        "confidence": 0.9455009647462496,
+        "start_char": 0,
+        "end_char": 10
+      },
+      {
+        "text": "Invasive ductal carcinoma, grade II.",
+        "bbox": [
+          317,
+          542,
+          681,
+          578
+        ],
+        "confidence": 0.7674958257743323,
+        "start_char": 11,
+        "end_char": 47
+      },
+      {
+        "text": "Tumor cells are ER-positive, PR-positive, HERZ-negative_",
+        "bbox": [
+          318,
+          590,
+          904,
+          623
+        ],
+        "confidence": 0.7436265067257927,
+        "start_char": 48,
+        "end_char": 104
+      },
+      {
+        "text": "Margins: Not applicable (core biopsy):",
+        "bbox": [
+          319,
+          683,
+          707,
+          722
+        ],
+        "confidence": 0.8188812148253756,
+        "start_char": 105,
+        "end_char": 143
+      },
+      {
+        "text": "Recommendation: Surgical excision and staging:",
+        "bbox": [
+          320,
+          734,
+          816,
+          766
+        ],
+        "confidence": 0.8506252619631526,
+        "start_char": 144,
+        "end_char": 190
+      },
+      {
+        "text": "Pathologist: Dr: Daniel Holt; MD",
+        "bbox": [
+          318,
+          830,
+          646,
+          860
+        ],
+        "confidence": 0.8822101481019581,
+        "start_char": 191,
+        "end_char": 223
+      },
+      {
+        "text": "Facility: University of Colorado Pathology Lab",
+        "bbox": [
+          316,
+          872,
+          787,
+          908
+        ],
+        "confidence": 0.8420602955584958,
+        "start_char": 224,
+        "end_char": 270
+      }
+    ],
+    "text": "Diagnosis: Invasive ductal carcinoma, grade II. Tumor cells are ER-positive, PR-positive, HERZ-negative_ Margins: Not applicable (core biopsy): Recommendation: Surgical excision and staging: Pathologist: Dr: Daniel Holt; MD Facility: University of Colorado Pathology Lab"
   }
 ]

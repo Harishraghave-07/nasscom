@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: phi-service
+  namespace: nasscom
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: phi-service
+  template:
+    metadata:
+      labels:
+        app: phi-service
+    spec:
+      containers:
+        - name: phi-service
+          image: nasscom/phi_service:latest
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - secretRef:
+                name: nasscom-secrets
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "1Gi"
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+      securityContext:
+        runAsNonRoot: true

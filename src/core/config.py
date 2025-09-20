@@ -207,6 +207,12 @@ class ProcessingConfig(BaseModel):
     max_image_size: int = Field(2048, ge=128)
     supported_formats: List[str] = Field(default_factory=lambda: [".jpg", ".jpeg", ".png", ".dicom"])
     temp_dir: str = Field("temp/")
+    # When true, prefer in-memory temporary handling (no long-lived files)
+    use_in_memory_temp: bool = Field(False)
+    # Time-to-live for on-disk temp files (seconds). Files older than this will be cleaned up.
+    temp_ttl_seconds: int = Field(3600, ge=0)
+    # Whether to cleanup temp_dir on startup to avoid artifacts from previous runs
+    temp_cleanup_on_startup: bool = Field(True)
     max_batch_size: int = Field(10, ge=1)
     timeout_seconds: int = Field(300, ge=1)
     # Allow tests/dev environments to continue when optional heavy
@@ -280,6 +286,13 @@ class AppConfig(BaseSettings):
     use_presidio: bool = Field(True, description="Global toggle to enable Presidio for PHI detection")
     # Toggle to enable verbose OCR debug outputs (JSON dumps and overlay PNGs)
     ocr_debug: bool = Field(True, description="When True, OCR debug artifacts (json + overlays) are written to debug/ocr/")
+
+    # Feature flags for gradual rollout and safe defaults
+    use_external_phi_service: bool = Field(False, description="When True, route PHI detection to external PHI microservice")
+    enable_dummy_data_replacement: bool = Field(False, description="When True, dummy data replacement/anonymization features are active")
+    enable_role_based_auth: bool = Field(True, description="When True, enforce role-based authentication on API endpoints")
+    enable_audit_logging: bool = Field(True, description="When True, write detailed audit logs (redacted as configured)")
+    debug_mode: bool = Field(False, description="When True, enable debug artifacts and verbose logging")
 
     class Config:
         env_file = ".env"
@@ -366,6 +379,56 @@ class AppConfig(BaseSettings):
 
         return True
 
+    # ---------------- Authentication Settings ----------------
+    # JWT settings for token issuance and verification
+    jwt_algorithm: str = Field("HS256", description="JWT signing algorithm")
+    jwt_secret: Optional[str] = Field(None, description="Secret used to sign JWTs; required in prod")
+    jwt_exp_seconds: int = Field(3600, description="Default JWT expiry in seconds")
+
+    # API key support for service accounts: comma-separated KEY:ROLE pairs
+    # or a JSON string mapping keys to metadata. Should be provided via env in production.
+    service_api_keys: Optional[str] = Field(None, description="Optional API key store for service accounts (env string)")
+
+    # Rate limiting per-role (requests per minute)
+    rate_limit_admin_rpm: int = Field(1200, ge=1)
+    rate_limit_service_rpm: int = Field(6000, ge=1)
+    rate_limit_user_rpm: int = Field(300, ge=1)
+
+    # Audit logging controls for authentication events
+    auth_audit_logger: str = Field("cim.audit.auth")
+    auth_log_redact_secrets: bool = Field(True, description="When True, do not log secret values in auth events")
+
+    def load_api_key_map(self) -> Dict[str, Dict]:
+        """Parse `service_api_keys` env/config value into a dict mapping key->meta.
+
+        Supports either a JSON mapping (preferred) or comma-separated
+        'key:role' pairs for simple deployments.
+        """
+        raw = self.service_api_keys
+        if not raw:
+            return {}
+        try:
+            import json
+
+            parsed = json.loads(raw)
+            if isinstance(parsed, dict):
+                return {k: v if isinstance(v, dict) else {"role": v} for k, v in parsed.items()}
+        except Exception:
+            # fallback to comma-separated parsing
+            pass
+
+        result: Dict[str, Dict] = {}
+        for part in raw.split(","):
+            part = part.strip()
+            if not part:
+                continue
+            if ":" in part:
+                k, r = part.split(":", 1)
+                result[k.strip()] = {"role": r.strip()}
+            else:
+                result[part] = {"role": "service_account"}
+        return result
+
     def setup_logging(self) -> None:
         """Configure logging for the application with HIPAA-compliant redaction.
 
@@ -421,12 +484,66 @@ class AppConfig(BaseSettings):
             if not any(isinstance(h, RotatingFileHandler) and h.baseFilename == audit_handler.baseFilename for h in root.handlers):
                 root.addHandler(audit_handler)
 
+        def cleanup_expired_temp_files(self) -> int:
+            """Remove expired files from the configured `processing.temp_dir`.
+
+            Returns the number of files removed. This only applies when
+            `use_in_memory_temp` is False and `temp_ttl_seconds` > 0.
+            """
+            removed = 0
+            if getattr(self.processing, "use_in_memory_temp", False):
+                return removed
+
+            temp_path = Path(self.processing.temp_dir)
+            if not temp_path.exists():
+                return removed
+
+            now = datetime.datetime.utcnow().timestamp()
+            ttl = int(getattr(self.processing, "temp_ttl_seconds", 0))
+            if ttl <= 0:
+                return removed
+
+            for p in temp_path.rglob("*"):
+                try:
+                    if p.is_file():
+                        mtime = p.stat().st_mtime
+                        if now - mtime > ttl:
+                            p.unlink()
+                            removed += 1
+                    elif p.is_dir():
+                        # attempt to remove empty dirs
+                        try:
+                            p.rmdir()
+                        except Exception:
+                            pass
+                except Exception:
+                    # ignore permission errors or races
+                    continue
+            return removed
+
+        def perform_startup_temp_cleanup(self) -> int:
+            """Run cleanup at startup if configured; returns count removed.
+
+            This method is intended to be called from application startup code.
+            """
+            if getattr(self.processing, "temp_cleanup_on_startup", False):
+                return self.cleanup_expired_temp_files()
+            return 0
+
     def get_temp_file_path(self, prefix: str = "cim_") -> str:
         """Create and return a temporary file path inside the configured temp_dir.
 
         This ensures temporary files stay under controlled directories that can
         be monitored and cleaned according to policy.
         """
+        # If in-memory temp is requested, return a path in the system temp
+        # but callers should prefer file-like objects kept in memory.
+        if getattr(self.processing, "use_in_memory_temp", False):
+            # create in system temp but mark for quick cleanup; rely on calling code
+            fh, path = tempfile.mkstemp(prefix=prefix)
+            os.close(fh)
+            return path
+
         temp_dir = Path(self.processing.temp_dir)
         temp_dir.mkdir(parents=True, exist_ok=True)
         fh, path = tempfile.mkstemp(prefix=prefix, dir=str(temp_dir))

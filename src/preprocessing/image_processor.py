@@ -67,8 +67,13 @@ class ImageProcessor:
 
     def __init__(self, config: ProcessingConfig):
         self.config = config
-        # Create temp directory under control
-        os.makedirs(self.config.temp_dir, exist_ok=True)
+        # Create temp directory under control unless in-memory temp requested
+        try:
+            if not getattr(self.config, "use_in_memory_temp", False):
+                os.makedirs(self.config.temp_dir, exist_ok=True)
+        except Exception:
+            # best-effort: do not fail initialization for temp dir creation
+            logger.debug("Could not create temp dir %s; proceeding", getattr(self.config, 'temp_dir', None))
 
         # Setup a logger specific to preprocessing
         self.logger = logger
@@ -76,9 +81,10 @@ class ImageProcessor:
 
         # Validate resources (disk/memory hints)
         try:
-            free = os.statvfs(self.config.temp_dir).f_bavail * os.statvfs(self.config.temp_dir).f_frsize
-            if free < 100 * 1024 * 1024:  # 100MB
-                self.logger.warning("Low disk space available in temp dir: %s bytes", free)
+            if not getattr(self.config, "use_in_memory_temp", False):
+                free = os.statvfs(self.config.temp_dir).f_bavail * os.statvfs(self.config.temp_dir).f_frsize
+                if free < 100 * 1024 * 1024:  # 100MB
+                    self.logger.warning("Low disk space available in temp dir: %s bytes", free)
         except Exception:
             self.logger.exception("Failed to determine disk space for temp dir")
 
